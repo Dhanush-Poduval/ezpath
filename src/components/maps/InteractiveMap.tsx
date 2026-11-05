@@ -64,7 +64,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       const mapConfig = locationMapAdapter.getMapConfig();
       const map = new maplibregl.Map({
         container: mapContainerRef.current,
-        style: mapConfig.styleUrl,
+        style: mapConfig.style,
         center: mapConfig.defaultCenter,
         zoom: mapConfig.defaultZoom,
         minZoom: mapConfig.minZoom,
@@ -285,9 +285,9 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
         <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-subtle-border shadow-subtle flex items-center gap-2 text-xs font-medium text-ink">
           <Navigation className="w-3.5 h-3.5 text-accent" />
-          <span>Multimodal Network Visualizer</span>
+          <span>OpenStreetMap (OSM)</span>
           <span className="text-slate-300">|</span>
-          <span className="text-ink-muted">Delhi NCR Accessible Corridor</span>
+          <span className="text-ink-muted">Accessible Multimodal Corridor</span>
         </div>
         <Button
           size="sm"

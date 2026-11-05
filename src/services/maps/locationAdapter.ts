@@ -1,11 +1,34 @@
 /**
  * Amazon Location Service & MapLibre Integration Adapter
- * Supports Amazon Location Service vector styles when AWS credentials/maps are provided,
- * with seamless fallback to high-performance local/Carto styles for local testing.
+ * Uses OpenStreetMap (OSM) standard tiles by default for instant, dependency-free cartography,
+ * with AWS Amazon Location Service integration ready.
  */
 
+export const OSM_STYLE = {
+  version: 8 as const,
+  sources: {
+    'osm-tiles': {
+      type: 'raster' as const,
+      tiles: [
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }
+  },
+  layers: [
+    {
+      id: 'osm-tiles-layer',
+      type: 'raster' as const,
+      source: 'osm-tiles',
+      minzoom: 0,
+      maxzoom: 19
+    }
+  ]
+};
+
 export interface MapConfig {
-  styleUrl: string;
+  style: any;
   defaultCenter: [number, number];
   defaultZoom: number;
   minZoom: number;
@@ -24,15 +47,15 @@ export class LocationMapAdapter {
   getMapConfig(): MapConfig {
     const hasAwsConfig = Boolean(import.meta.env.VITE_LOCATION_MAP_NAME && import.meta.env.VITE_AWS_REGION);
 
-    // If AWS credentials / Amazon Location map is configured, construct standard Amazon Location Service style URL
-    // e.g. https://maps.geo.{region}.amazonaws.com/maps/v0/maps/{mapName}/style-descriptor
-    const styleUrl = hasAwsConfig 
+    // If AWS credentials / Amazon Location map is configured, use AWS style descriptor URL;
+    // otherwise use high-speed direct OpenStreetMap (OSM) tiles
+    const style = hasAwsConfig 
       ? `https://maps.geo.${this.region}.amazonaws.com/maps/v0/maps/${this.mapName}/style-descriptor`
-      : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+      : OSM_STYLE;
 
     return {
-      styleUrl,
-      defaultCenter: [77.2300, 28.6350], // Centered around our multimodal corridor
+      style,
+      defaultCenter: [77.2300, 28.6350], // Centered around Delhi multimodal corridor
       defaultZoom: 13.5,
       minZoom: 10,
       maxZoom: 18,
@@ -69,4 +92,3 @@ export class LocationMapAdapter {
 }
 
 export const locationMapAdapter = new LocationMapAdapter();
-
