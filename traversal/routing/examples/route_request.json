@@ -1,0 +1,15 @@
+{
+  "request_id": "journey-001",
+  "origin": {"latitude": 12.8230, "longitude": 80.0447},
+  "destination": {"latitude": 12.8243, "longitude": 80.0473},
+  "profile": {
+    "wheelchair_user": true,
+    "unknown_accessibility_policy": "relaxed",
+    "walking_speed_mps": 1.0
+  },
+  "constraints": {
+    "max_walking_distance_m": 2500,
+    "max_snap_distance_m": 50,
+    "max_routes": 3
+  }
+}
