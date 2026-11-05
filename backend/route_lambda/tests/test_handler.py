@@ -3,6 +3,7 @@ import json
 import networkx as nx
 
 from backend.route_lambda.handler import handle_event
+from backend.route_lambda.status_overlay import StatusSnapshot
 from routing.service import RoutingService
 
 
@@ -15,7 +16,7 @@ def _service() -> RoutingService:
     )
     graph.add_node(1, x=0.0, y=0.0)
     graph.add_node(2, x=0.001, y=0.0)
-    graph.add_edge(1, 2, key=0, length=111.2, wheelchair="yes")
+    graph.add_edge(1, 2, key=0, length=111.2, wheelchair="yes", elevator_id="lift-a1")
     return RoutingService(graph)
 
 
@@ -91,3 +92,47 @@ def test_snap_distance_error_returns_422():
     )
 
     assert response["statusCode"] == 422
+
+
+class FakeStatusProvider:
+    def get_snapshot(self):
+        return StatusSnapshot(
+            active_event_ids=("event-1",),
+            blocking_event_ids=("event-1",),
+            blocked_entity_ids=frozenset({"lift-a1"}),
+        )
+
+
+def test_active_disruption_is_applied_to_route_request():
+    response = handle_event(
+        _event(
+            {
+                "origin": {"latitude": 0.0, "longitude": 0.0},
+                "destination": {"latitude": 0.0, "longitude": 0.001},
+                "profile": {"unknown_accessibility_policy": "relaxed"},
+                "constraints": {"max_snap_distance_m": 30},
+            }
+        ),
+        _service(),
+        FakeStatusProvider(),
+    )
+
+    assert response["statusCode"] == 200
+    payload = json.loads(response["body"])
+    assert payload["status"] == "no_route"
+    assert payload["status_overlay"] == {
+        "active_events": 1,
+        "blocking_events": 1,
+        "blocked_entity_ids": ["lift-a1"],
+    }
+
+
+def test_status_failure_returns_503_instead_of_potentially_stale_route():
+    class FailingProvider:
+        def get_snapshot(self):
+            raise RuntimeError("DynamoDB unavailable")
+
+    response = handle_event(_event({}), _service(), FailingProvider())
+
+    assert response["statusCode"] == 503
+    assert json.loads(response["body"])["error"]["code"] == "STATUS_OVERLAY_UNAVAILABLE"

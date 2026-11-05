@@ -41,6 +41,7 @@ def build(output: Path) -> Path:
     adapter = ROOT / "backend" / "route_lambda"
     shutil.copy2(adapter / "handler.py", destination / "handler.py")
     shutil.copy2(adapter / "graph_artifact.py", destination / "graph_artifact.py")
+    shutil.copy2(adapter / "status_overlay.py", destination / "status_overlay.py")
     shutil.copytree(
         ROOT / "traversal" / "routing" / "src" / "routing",
         destination / "routing",

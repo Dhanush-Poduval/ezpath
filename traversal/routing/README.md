@@ -175,6 +175,18 @@ The implementation has safety limits (`max_expansions`, `max_labels_per_node`) t
 
 Do not call a route physically verified based solely on OSM. `tag_supported` means the available tags explicitly support the route; it does not mean an on-site audit has happened.
 
+### Live disruption overlay
+
+The AWS adapter queries the active-event DynamoDB index before every route request. `elevator_outage`, `path_closure`, and `entrance_closure` events hard-block only graph elements whose identifiers match the event `entityId` exactly after case normalization. Service delays and bus cancellations remain visible events but do not close walking edges.
+
+Graph elements expose deterministic identifiers as follows:
+
+- Edges: `edge:{from}:{to}:{key}`, or explicit `entity_id`, `edge_id`, `facility_id`, `elevator_id`, or `ref` attributes.
+- Nodes: `node:{node}`, or explicit `entity_id`, `node_id`, `facility_id`, `elevator_id`, or `ref` attributes.
+- OSM identifiers: `osm:{osmid}`.
+
+No fuzzy or location-based matching is used. If the live status snapshot cannot be read, the Lambda returns HTTP `503` rather than calculating a route that might rely on an unavailable facility.
+
 ## 9. Tests
 
 ```bash

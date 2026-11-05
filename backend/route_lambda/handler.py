@@ -16,14 +16,17 @@ from routing.service import RouteRequestError, RoutingService
 
 try:
     from .graph_artifact import ensure_graph_artifact, graph_settings_from_environment
+    from .status_overlay import DynamoStatusProvider
 except ImportError:  # Lambda copies the adapter modules to the task root.
     from graph_artifact import ensure_graph_artifact, graph_settings_from_environment
+    from status_overlay import DynamoStatusProvider
 
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 
 _service: RoutingService | None = None
+_status_provider: DynamoStatusProvider | None = None
 
 
 def _json_response(status_code: int, payload: dict[str, Any]) -> dict[str, Any]:
@@ -64,7 +67,9 @@ def _get_service() -> RoutingService:
     return _service
 
 
-def handle_event(event: dict[str, Any], service: RoutingService) -> dict[str, Any]:
+def handle_event(
+    event: dict[str, Any], service: RoutingService, status_provider: Any | None = None
+) -> dict[str, Any]:
     """Handle one API Gateway event with an injected routing service."""
     if event.get("routeKey") == "GET /health":
         return _json_response(
@@ -78,7 +83,30 @@ def handle_event(event: dict[str, Any], service: RoutingService) -> dict[str, An
         )
     try:
         payload = _request_body(event)
-        result = service.route(payload)
+        if status_provider is None:
+            blocked_entity_ids = frozenset()
+            overlay = None
+        else:
+            try:
+                snapshot = status_provider.get_snapshot()
+            except Exception:
+                LOGGER.exception("active disruption snapshot unavailable")
+                return _json_response(
+                    503,
+                    {
+                        "error": {
+                            "code": "STATUS_OVERLAY_UNAVAILABLE",
+                            "message": "Live accessibility status is temporarily unavailable",
+                        }
+                    },
+                )
+            blocked_entity_ids = snapshot.blocked_entity_ids
+            overlay = snapshot.metadata()
+        result = service.route(
+            payload,
+            blocked_entity_ids=blocked_entity_ids,
+            status_overlay=overlay,
+        )
         return _json_response(200, result)
     except RouteRequestError as exc:
         message = str(exc)
@@ -98,4 +126,13 @@ def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """AWS Lambda entry point."""
     request_id = getattr(context, "aws_request_id", None)
     LOGGER.info("route request received", extra={"aws_request_id": request_id})
-    return handle_event(event, _get_service())
+    return handle_event(event, _get_service(), _get_status_provider())
+
+
+def _get_status_provider() -> DynamoStatusProvider:
+    global _status_provider
+    if _status_provider is None:
+        import os
+
+        _status_provider = DynamoStatusProvider(os.environ.get("EZPATH_STATUS_TABLE", ""))
+    return _status_provider

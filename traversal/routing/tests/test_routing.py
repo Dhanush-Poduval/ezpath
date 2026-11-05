@@ -66,3 +66,37 @@ def test_service_response_contract():
     assert response["status"] == "ok"
     assert "snapped_points" in response
     assert response["routes"][0]["route_id"]
+    assert response["status_overlay"] == {
+        "active_events": 0,
+        "blocking_events": 0,
+        "blocked_entity_ids": [],
+    }
+
+
+def test_active_disruption_excludes_exactly_matched_edge():
+    graph = small_graph()
+    graph.edges[1, 2, 0]["elevator_id"] = "lift-a1"
+
+    routes = route_candidates(
+        graph,
+        1,
+        3,
+        unknown_policy="relaxed",
+        max_walking_m=500,
+        blocked_entity_ids={"LIFT-A1"},
+    )
+
+    assert len(routes) == 1
+    assert routes[0]["metrics"]["walking_distance_m"] == 230.0
+    assert routes[0]["edges"][0]["from"] == 1
+    assert routes[0]["edges"][0]["to"] == 3
+
+
+def test_blocked_origin_or_destination_returns_no_route():
+    assert route_candidates(
+        small_graph(),
+        1,
+        3,
+        unknown_policy="relaxed",
+        blocked_entity_ids={"node:3"},
+    ) == []
