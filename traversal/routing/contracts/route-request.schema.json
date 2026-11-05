@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/contracts/route-request.schema.json",
+  "title": "Accessible Routing Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["origin", "destination"],
+  "properties": {
+    "request_id": {"type": ["string", "null"], "maxLength": 128},
+    "origin": {"$ref": "#/$defs/coordinate"},
+    "destination": {"$ref": "#/$defs/coordinate"},
+    "profile": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "wheelchair_user": {"type": "boolean", "default": true},
+        "unknown_accessibility_policy": {"type": "string", "enum": ["strict", "relaxed"], "default": "strict"},
+        "walking_speed_mps": {"type": "number", "exclusiveMinimum": 0, "default": 1.0}
+      }
+    },
+    "constraints": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "max_walking_distance_m": {"type": "number", "minimum": 0, "default": 3000},
+        "max_snap_distance_m": {"type": "number", "exclusiveMinimum": 0, "default": 50},
+        "max_routes": {"type": "integer", "minimum": 1, "maximum": 10, "default": 3}
+      }
+    }
+  },
+  "$defs": {
+    "coordinate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["latitude", "longitude"],
+      "properties": {
+        "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+        "longitude": {"type": "number", "minimum": -180, "maximum": 180}
+      }
+    }
+  }
+}
