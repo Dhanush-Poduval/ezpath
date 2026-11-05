@@ -8,10 +8,16 @@ It deliberately does not own the frontend map, AWS credentials, user authenticat
 
 ```text
 routing/
-├── data/campus.graphml
+├── config/
+│   ├── campus.json            # fixed build coverage and S3 object key
+│   └── campus-locations.json  # source-backed frontend location catalog
+├── data/                    # generated locally; published to S3, not Git
+│   ├── campus.graphml
+│   └── campus.manifest.json
 ├── scripts/
 │   ├── download_graph.py
 │   ├── inspect_graph.py
+│   ├── upload_graph.py
 │   └── route_demo.py
 ├── src/routing/
 │   ├── graph.py          # OSM extraction, loading, snapping
@@ -28,20 +34,20 @@ routing/
 
 ## 2. Install
 
-From the project root:
+From the `traversal/routing` package directory:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install -e '.[api,test]'
+pip install -e '.[api,build,test]'
 ```
 
 PowerShell:
 
 ```powershell
 .venv\Scripts\Activate.ps1
-python -m pip install -e ".[api,test]"
+python -m pip install -e ".[api,build,test]"
 ```
 
 Editable installation resolves `routing` imports without manually setting `PYTHONPATH`.
@@ -53,7 +59,24 @@ python scripts/download_graph.py
 python scripts/inspect_graph.py
 ```
 
-The graph is saved as `data/campus.graphml`. It remains a directed `MultiDiGraph`; do not convert it to a simple graph because that would discard one-way direction or parallel edges. Downloading requires internet access.
+The downloader uses the explicit SRM Kattankulathur center and radius in `config/campus.json`, not an ambiguous place-name geocoder. It validates the directed `MultiDiGraph`, verifies every source-backed catalog location can snap to one strongly connected walking component, and writes `data/campus.graphml` plus `data/campus.manifest.json`. The manifest records source/license, coverage, graph version, connectivity counts, byte size, and SHA-256. These generated files are ignored by Git and belong in the versioned S3 graph bucket. Downloading requires internet access.
+
+Use `--force` to deliberately replace a local artifact with a fresh OpenStreetMap snapshot:
+
+```bash
+python scripts/download_graph.py --force
+```
+
+Preview the S3 publication commands after CDK deployment:
+
+```powershell
+python scripts/upload_graph.py `
+  --bucket <GraphBucketName-output> `
+  --profile ezpath-dev `
+  --region ap-south-1
+```
+
+The upload helper is a dry run by default. Add `--execute` only after checking the bucket, profile, region, and printed commands. It verifies the graph SHA-256 before invoking the AWS CLI. No AWS credentials are stored in the repository.
 
 ## 4. Run the local route demo
 
