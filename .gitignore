@@ -6,11 +6,15 @@ node_modules
 # Python caches
 __pycache__/
 *.py[cod]
+.pytest-tmp/
 
 # Production build output
 dist
 dist-ssr
 *.tsbuildinfo
+.build/
+infra/cdk.out
+infra/dist
 
 # Environment files
 .env

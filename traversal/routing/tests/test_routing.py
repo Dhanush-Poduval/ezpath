@@ -1,7 +1,7 @@
 import networkx as nx
 import pytest
 from routing.accessibility import classify_edge, evaluate_edge
-from routing.graph import snap_coordinate
+from routing.graph import load_graph, snap_coordinate
 from routing.router import route_candidates
 from routing.service import RoutingService, RouteRequestError
 
@@ -16,6 +16,18 @@ def small_graph():
     g.add_edge(2, 3, key=0, length=111.2, wheelchair="yes")
     g.add_edge(1, 3, key=0, length=230.0)  # unknown
     return g
+
+
+def test_graphml_load_does_not_require_osmnx(tmp_path):
+    graph_path = tmp_path / "routing.graphml"
+    nx.write_graphml(small_graph(), graph_path)
+
+    loaded = load_graph(str(graph_path))
+
+    assert isinstance(loaded, nx.MultiDiGraph)
+    assert loaded.graph["routing_graph_version"] == "test-v1"
+    assert loaded.number_of_nodes() == 3
+    assert loaded.number_of_edges() == 3
 
 
 def test_accessibility_policy():

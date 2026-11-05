@@ -9,11 +9,15 @@ from __future__ import annotations
 import base64
 import json
 import logging
-import os
 from typing import Any
 
 from routing.graph import load_graph
 from routing.service import RouteRequestError, RoutingService
+
+try:
+    from .graph_artifact import ensure_graph_artifact, graph_settings_from_environment
+except ImportError:  # Lambda copies the adapter modules to the task root.
+    from graph_artifact import ensure_graph_artifact, graph_settings_from_environment
 
 
 LOGGER = logging.getLogger(__name__)
@@ -53,7 +57,8 @@ def _request_body(event: dict[str, Any]) -> dict[str, Any]:
 def _get_service() -> RoutingService:
     global _service
     if _service is None:
-        graph_path = os.environ.get("EZPATH_GRAPH_PATH", "/opt/ezpath/data/campus.graphml")
+        local_path, bucket, key = graph_settings_from_environment()
+        graph_path = ensure_graph_artifact(local_path, bucket=bucket, key=key)
         LOGGER.info("loading routing graph", extra={"graph_path": graph_path})
         _service = RoutingService(load_graph(graph_path))
     return _service

@@ -46,8 +46,7 @@ def load_graph(path: str = "data/campus.graphml") -> nx.MultiDiGraph:
     graph_path = Path(path)
     if not graph_path.is_file():
         raise FileNotFoundError(f"Graph file not found: {graph_path}. Run scripts/download_graph.py first.")
-    import osmnx as ox
-    graph = ox.load_graphml(graph_path)
+    graph = nx.read_graphml(graph_path, force_multigraph=True)
     if not isinstance(graph, nx.MultiDiGraph):
         raise TypeError("Loaded graph is not a NetworkX MultiDiGraph")
     if graph.number_of_nodes() == 0 or graph.number_of_edges() == 0:
