@@ -168,7 +168,10 @@ To connect the application to an active AWS Transit Backend:
    VITE_LOCATION_MAP_NAME=AccessPathDefaultMap
    VITE_COGNITO_USER_POOL_ID=ap-south-1_accesspath
    VITE_COGNITO_CLIENT_ID=your_cognito_app_client_id
-   VITE_APPSYNC_EVENTS_URL=https://events.accesspath.transit.aws.internal
+   VITE_APPSYNC_EVENTS_HTTP_URL=https://your-api-id.appsync-api.ap-south-1.amazonaws.com/event
+   VITE_APPSYNC_EVENTS_REALTIME_URL=wss://your-api-id.appsync-realtime-api.ap-south-1.amazonaws.com/event/realtime
+   VITE_APPSYNC_EVENTS_API_KEY=your_subscriber_key
+   VITE_APPSYNC_EVENTS_CHANNEL=/disruptions/network
    ```
 3. Rebuild and deploy:
    ```bash
