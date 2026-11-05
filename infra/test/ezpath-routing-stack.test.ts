@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { App } from "aws-cdk-lib";
-import { Template } from "aws-cdk-lib/assertions";
+import { Match, Template } from "aws-cdk-lib/assertions";
 import { EzPathRoutingStack } from "../lib/ezpath-routing-stack";
 
 function template(): Template {
@@ -26,6 +26,7 @@ test("creates the live-status table with TTL and point-in-time recovery", () => 
     BillingMode: "PAY_PER_REQUEST",
     PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true },
     TimeToLiveSpecification: { AttributeName: "expiresAt", Enabled: true },
+    StreamSpecification: { StreamViewType: "NEW_AND_OLD_IMAGES" },
     GlobalSecondaryIndexes: [
       {
         IndexName: "active-events",
@@ -54,7 +55,10 @@ test("creates the ZIP-based Python Lambda and both HTTP routes", () => {
 
 test("creates the disruption Lambda and event API routes", () => {
   const rendered = template();
-  rendered.resourceCountIs("AWS::Lambda::Function", 2);
+  const applicationFunctions = rendered.findResources("AWS::Lambda::Function", {
+    Properties: { Handler: "handler.lambda_handler" },
+  });
+  assert.equal(Object.keys(applicationFunctions).length, 3);
   rendered.hasResourceProperties("AWS::Lambda::Function", {
     Runtime: "python3.12",
     Handler: "handler.lambda_handler",
@@ -87,4 +91,64 @@ test("creates an MFA-protected Cognito operator pool", () => {
     PreventUserExistenceErrors: "ENABLED",
   });
   rendered.resourceCountIs("AWS::ApiGatewayV2::Authorizer", 1);
+});
+
+test("creates an AppSync Event API with IAM publish and subscriber-key read access", () => {
+  const rendered = template();
+  rendered.hasResourceProperties("AWS::AppSync::Api", {
+    Name: "ezpath-events",
+    EventConfig: Match.objectLike({
+      AuthProviders: Match.arrayWith([
+        { AuthType: "AWS_IAM" },
+        { AuthType: "API_KEY" },
+      ]),
+      ConnectionAuthModes: [{ AuthType: "API_KEY" }],
+      DefaultPublishAuthModes: [{ AuthType: "AWS_IAM" }],
+      DefaultSubscribeAuthModes: [{ AuthType: "API_KEY" }],
+    }),
+  });
+  rendered.hasResourceProperties("AWS::AppSync::ChannelNamespace", {
+    Name: "disruptions",
+    PublishAuthModes: [{ AuthType: "AWS_IAM" }],
+    SubscribeAuthModes: [{ AuthType: "API_KEY" }],
+  });
+  rendered.resourceCountIs("AWS::AppSync::ApiKey", 1);
+});
+
+test("streams status changes through the publisher Lambda with retries and a DLQ", () => {
+  const rendered = template();
+  rendered.hasResourceProperties("AWS::Lambda::Function", {
+    Runtime: "python3.12",
+    Handler: "handler.lambda_handler",
+    MemorySize: 256,
+    Timeout: 15,
+    Environment: {
+      Variables: Match.objectLike({
+        EZPATH_APPSYNC_CHANNEL: "/disruptions/network",
+      }),
+    },
+  });
+  rendered.hasResourceProperties("AWS::Lambda::EventSourceMapping", {
+    StartingPosition: "LATEST",
+    BatchSize: 5,
+    BisectBatchOnFunctionError: true,
+    MaximumRetryAttempts: 3,
+    DestinationConfig: {
+      OnFailure: { Destination: Match.anyValue() },
+    },
+  });
+  rendered.hasResourceProperties("AWS::SQS::Queue", {
+    MessageRetentionPeriod: 1209600,
+    SqsManagedSseEnabled: true,
+  });
+  rendered.hasResourceProperties("AWS::IAM::Policy", {
+    PolicyDocument: {
+      Statement: Match.arrayWith([
+        Match.objectLike({
+          Action: "appsync:EventPublish",
+          Effect: "Allow",
+        }),
+      ]),
+    },
+  });
 });

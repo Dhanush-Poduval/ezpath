@@ -2,20 +2,24 @@ import * as path from "node:path";
 import {
   CfnOutput,
   Duration,
+  Expiration,
   RemovalPolicy,
   Size,
   Stack,
   StackProps,
   aws_apigatewayv2 as apigatewayv2,
+  aws_appsync as appsync,
   aws_cloudwatch as cloudwatch,
   aws_cognito as cognito,
   aws_dynamodb as dynamodb,
   aws_lambda as lambda,
   aws_logs as logs,
   aws_s3 as s3,
+  aws_sqs as sqs,
 } from "aws-cdk-lib";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { HttpJwtAuthorizer } from "aws-cdk-lib/aws-apigatewayv2-authorizers";
+import { DynamoEventSource, SqsDlq } from "aws-cdk-lib/aws-lambda-event-sources";
 import { Construct } from "constructs";
 
 export class EzPathRoutingStack extends Stack {
@@ -39,6 +43,7 @@ export class EzPathRoutingStack extends Stack {
         pointInTimeRecoveryEnabled: true,
       },
       timeToLiveAttribute: "expiresAt",
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
       removalPolicy: RemovalPolicy.RETAIN,
     });
     statusTable.addGlobalSecondaryIndex({
@@ -61,6 +66,38 @@ export class EzPathRoutingStack extends Stack {
       authFlows: { userSrp: true },
       generateSecret: false,
       preventUserExistenceErrors: true,
+    });
+
+    const eventsApi = new appsync.EventApi(this, "EventsApi", {
+      apiName: "ezpath-events",
+      authorizationConfig: {
+        authProviders: [
+          { authorizationType: appsync.AppSyncAuthorizationType.IAM },
+          {
+            authorizationType: appsync.AppSyncAuthorizationType.API_KEY,
+            apiKeyConfig: {
+              name: "SubscriberKey",
+              description: "Read-only browser subscriptions for the EzPath prototype",
+              expires: Expiration.after(Duration.days(30)),
+            },
+          },
+        ],
+        connectionAuthModeTypes: [appsync.AppSyncAuthorizationType.API_KEY],
+        defaultPublishAuthModeTypes: [appsync.AppSyncAuthorizationType.IAM],
+        defaultSubscribeAuthModeTypes: [appsync.AppSyncAuthorizationType.API_KEY],
+      },
+      logConfig: {
+        excludeVerboseContent: true,
+        fieldLogLevel: appsync.AppSyncFieldLogLevel.ERROR,
+        retention: logs.RetentionDays.ONE_WEEK,
+      },
+    });
+    const disruptionNamespace = eventsApi.addChannelNamespace("DisruptionNamespace", {
+      channelNamespaceName: "disruptions",
+      authorizationConfig: {
+        publishAuthModeTypes: [appsync.AppSyncAuthorizationType.IAM],
+        subscribeAuthModeTypes: [appsync.AppSyncAuthorizationType.API_KEY],
+      },
     });
 
     const repositoryRoot = path.resolve(__dirname, "..", "..", "..");
@@ -107,6 +144,42 @@ export class EzPathRoutingStack extends Stack {
       }),
     });
     statusTable.grantReadWriteData(disruptionFunction);
+
+    const publisherPackage = path.join(repositoryRoot, ".build", "event_publisher_lambda");
+    const publisherFunction = new lambda.Function(this, "EventPublisherFunction", {
+      runtime: lambda.Runtime.PYTHON_3_12,
+      handler: "handler.lambda_handler",
+      code: lambda.Code.fromAsset(publisherPackage),
+      architecture: lambda.Architecture.X86_64,
+      description: "Publish disruption-table changes to AppSync Events",
+      environment: {
+        EZPATH_APPSYNC_HTTP_DNS: eventsApi.httpDns,
+        EZPATH_APPSYNC_CHANNEL: "/disruptions/network",
+      },
+      memorySize: 256,
+      timeout: Duration.seconds(15),
+      logGroup: new logs.LogGroup(this, "EventPublisherFunctionLogs", {
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: RemovalPolicy.DESTROY,
+      }),
+    });
+    disruptionNamespace.grantPublish(publisherFunction);
+
+    const publisherDeadLetterQueue = new sqs.Queue(this, "EventPublisherDeadLetterQueue", {
+      encryption: sqs.QueueEncryption.SQS_MANAGED,
+      enforceSSL: true,
+      retentionPeriod: Duration.days(14),
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+    publisherFunction.addEventSource(
+      new DynamoEventSource(statusTable, {
+        startingPosition: lambda.StartingPosition.LATEST,
+        batchSize: 5,
+        bisectBatchOnError: true,
+        retryAttempts: 3,
+        onFailure: new SqsDlq(publisherDeadLetterQueue),
+      }),
+    );
 
     const httpApi = new apigatewayv2.HttpApi(this, "HttpApi", {
       apiName: "ezpath-routing-api",
@@ -179,6 +252,10 @@ export class EzPathRoutingStack extends Stack {
         title: "Disruption Lambda invocations and errors",
         left: [disruptionFunction.metricInvocations(), disruptionFunction.metricErrors()],
       }),
+      new cloudwatch.GraphWidget({
+        title: "Event publisher invocations and errors",
+        left: [publisherFunction.metricInvocations(), publisherFunction.metricErrors()],
+      }),
     );
 
     new CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
@@ -187,5 +264,14 @@ export class EzPathRoutingStack extends Stack {
     new CfnOutput(this, "StatusTableName", { value: statusTable.tableName });
     new CfnOutput(this, "OperatorUserPoolId", { value: operatorUserPool.userPoolId });
     new CfnOutput(this, "OperatorUserPoolClientId", { value: operatorClient.userPoolClientId });
+    new CfnOutput(this, "AppSyncEventsHttpUrl", {
+      value: `https://${eventsApi.httpDns}/event`,
+    });
+    new CfnOutput(this, "AppSyncEventsRealtimeUrl", {
+      value: `wss://${eventsApi.realtimeDns}/event/realtime`,
+    });
+    new CfnOutput(this, "AppSyncEventsSubscriberKey", {
+      value: eventsApi.apiKeys.SubscriberKey.attrApiKey,
+    });
   }
 }
