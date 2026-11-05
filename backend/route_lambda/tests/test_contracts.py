@@ -56,7 +56,13 @@ def test_openapi_uses_components_and_existing_external_schemas():
     document = yaml.safe_load(OPENAPI.read_text(encoding="utf-8"))
 
     assert document["openapi"] == "3.1.0"
-    assert sorted(document["paths"]) == ["/health", "/v1/routes"]
+    assert sorted(document["paths"]) == [
+        "/health",
+        "/v1/events",
+        "/v1/events/active",
+        "/v1/events/{eventId}/resolve",
+        "/v1/routes",
+    ]
     schemas = document["components"]["schemas"]
     assert schemas["RouteRequest"]["$ref"] == "../traversal/routing/contracts/route-request.schema.json"
     assert schemas["RouteResponse"]["$ref"] == "../traversal/routing/contracts/route-response.schema.json"
