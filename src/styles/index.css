@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 247 249 252;
+    --surface: 255 255 255;
+    --ink: 20 36 58;
+    --accent: 37 99 235;
+    --accessible: 8 127 109;
+    --warning: 182 106 8;
+    --disruption: 196 61 67;
+  }
+
+  body {
+    background-color: #F7F9FC;
+    color: #14243A;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Manrope', 'Inter', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  /* Accessible focus ring */
+  *:focus-visible {
+    outline: 2px solid #2563EB;
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom scrollbars for side panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* MapLibre canvas full size */
+.maplibregl-map {
+  width: 100%;
+  height: 100%;
+}
+
