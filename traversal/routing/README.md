@@ -7,13 +7,13 @@ It deliberately does not own the frontend map, AWS credentials, user authenticat
 ## 1. Project layout
 
 ```text
-accessible_routing/
+routing/
 ├── data/campus.graphml
 ├── scripts/
 │   ├── download_graph.py
 │   ├── inspect_graph.py
 │   └── route_demo.py
-├── src/accessible_routing/
+├── src/routing/
 │   ├── graph.py          # OSM extraction, loading, snapping
 │   ├── accessibility.py  # edge feasibility and reason codes
 │   ├── router.py         # multi-label A* and Pareto pruning
@@ -44,7 +44,7 @@ PowerShell:
 python -m pip install -e ".[api,test]"
 ```
 
-Editable installation resolves `accessible_routing` imports without manually setting `PYTHONPATH`.
+Editable installation resolves `routing` imports without manually setting `PYTHONPATH`.
 
 ## 3. Download and inspect the graph
 
@@ -139,7 +139,7 @@ Response shape (values abbreviated):
 The API loads the graph once when the app starts:
 
 ```bash
-uvicorn accessible_routing.api:app --host 0.0.0.0 --port 8000
+uvicorn routing.api:app --host 0.0.0.0 --port 8000
 ```
 
 Check health:

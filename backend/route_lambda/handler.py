@@ -1,0 +1,96 @@
+"""AWS Lambda adapter for the framework-independent routing service.
+
+The routing algorithm remains unaware of AWS. This module only translates an
+API Gateway HTTP API event into the canonical JSON contract and maps expected
+domain errors to HTTP responses.
+"""
+from __future__ import annotations
+
+import base64
+import json
+import logging
+import os
+from typing import Any
+
+from routing.graph import load_graph
+from routing.service import RouteRequestError, RoutingService
+
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.INFO)
+
+_service: RoutingService | None = None
+
+
+def _json_response(status_code: int, payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "statusCode": status_code,
+        "headers": {"content-type": "application/json"},
+        "body": json.dumps(payload, separators=(",", ":")),
+    }
+
+
+def _request_body(event: dict[str, Any]) -> dict[str, Any]:
+    raw_body = event.get("body")
+    if raw_body is None:
+        raise RouteRequestError("request body is required")
+    if event.get("isBase64Encoded"):
+        try:
+            raw_body = base64.b64decode(raw_body).decode("utf-8")
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise RouteRequestError("request body is not valid base64-encoded UTF-8") from exc
+    if isinstance(raw_body, dict):
+        return raw_body
+    try:
+        parsed = json.loads(raw_body)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise RouteRequestError("request body must be valid JSON") from exc
+    if not isinstance(parsed, dict):
+        raise RouteRequestError("request body must be a JSON object")
+    return parsed
+
+
+def _get_service() -> RoutingService:
+    global _service
+    if _service is None:
+        graph_path = os.environ.get("EZPATH_GRAPH_PATH", "/opt/ezpath/data/campus.graphml")
+        LOGGER.info("loading routing graph", extra={"graph_path": graph_path})
+        _service = RoutingService(load_graph(graph_path))
+    return _service
+
+
+def handle_event(event: dict[str, Any], service: RoutingService) -> dict[str, Any]:
+    """Handle one API Gateway event with an injected routing service."""
+    if event.get("routeKey") == "GET /health":
+        return _json_response(
+            200,
+            {
+                "status": "ok",
+                "graph_version": service.graph_version,
+                "nodes": service.graph.number_of_nodes(),
+                "edges": service.graph.number_of_edges(),
+            },
+        )
+    try:
+        payload = _request_body(event)
+        result = service.route(payload)
+        return _json_response(200, result)
+    except RouteRequestError as exc:
+        message = str(exc)
+        status_code = 422 if "SNAP_DISTANCE_EXCEEDED" in message else 400
+        return _json_response(
+            status_code,
+            {
+                "error": {
+                    "code": "ROUTE_REQUEST_INVALID",
+                    "message": message,
+                }
+            },
+        )
+
+
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """AWS Lambda entry point."""
+    request_id = getattr(context, "aws_request_id", None)
+    LOGGER.info("route request received", extra={"aws_request_id": request_id})
+    return handle_event(event, _get_service())

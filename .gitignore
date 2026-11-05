@@ -3,6 +3,10 @@ node_modules
 .pnp
 .pnp.js
 
+# Python caches
+__pycache__/
+*.py[cod]
+
 # Production build output
 dist
 dist-ssr

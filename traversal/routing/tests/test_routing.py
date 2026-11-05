@@ -1,9 +1,9 @@
 import networkx as nx
 import pytest
-from accessible_routing.accessibility import classify_edge, evaluate_edge
-from accessible_routing.graph import snap_coordinate
-from accessible_routing.router import route_candidates
-from accessible_routing.service import RoutingService, RouteRequestError
+from routing.accessibility import classify_edge, evaluate_edge
+from routing.graph import snap_coordinate
+from routing.router import route_candidates
+from routing.service import RoutingService, RouteRequestError
 
 
 def small_graph():
