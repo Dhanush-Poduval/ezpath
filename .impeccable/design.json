@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-05T08:46:33.930Z",
+  "title": "Design System: Ezpath",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "route-preview",
+        "value": "0 12px 32px #263e3014",
+        "purpose": "Elevate the route summary above the map."
+      }
+    ],
+    "motion": [
+      {
+        "name": "hero",
+        "value": "1s power3.out",
+        "purpose": "GSAP staggered entrance; disabled with reduced motion."
+      },
+      {
+        "name": "route",
+        "value": "1.6s power2.inOut",
+        "purpose": "Draw the selected example route."
+      },
+      {
+        "name": "scroll-reveal",
+        "value": "0.85s power3.out",
+        "purpose": "Once-per-block GSAP ScrollTrigger reveal across product pages."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "480px"
+      },
+      {
+        "name": "stack",
+        "value": "800px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary link",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Navigate to the journey planner.",
+      "html": "<a class=\"ezpath-button\" href=\"/plan\">Plan your journey</a>",
+      "css": ".ezpath-button{display:inline-flex;background:#264c3f;color:white;padding:18px 24px;border-radius:4px;font:500 13px sans-serif;text-decoration:none}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Considered architectural wayfinding",
+    "overview": "Calm, precise and welcoming travel planning.",
+    "keyCharacteristics": [
+      "Forest and porcelain",
+      "Geographic route comparison",
+      "Restrained motion"
+    ],
+    "dos": [
+      "Label demonstration data",
+      "Preserve mobility constraints"
+    ],
+    "donts": [
+      "Invent accessibility certification",
+      "Rename persistent storage for cosmetic branding"
+    ]
+  }
+}

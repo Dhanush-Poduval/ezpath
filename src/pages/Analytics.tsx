@@ -13,22 +13,22 @@ export const Analytics: React.FC = () => {
   const stairsEdges = edges.filter(e => e.hasStairs).length;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="product-page space-y-8">
       <div className="flex items-center justify-between">
         <Link to="/operator" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-ink">
           <ArrowLeft className="w-4 h-4" />
-          Back to Command Centre
+          Back to overview
         </Link>
       </div>
 
-      <div>
+      <div data-reveal>
         <div className="text-xs font-semibold text-accent uppercase tracking-wider">
-          Accessibility Coverage & Audit Telemetry
+          Network analytics
         </div>
-        <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-ink">
-          Operational Analytics & Evidence Coverage
+        <h1 className="product-title">
+          Accessibility insights
         </h1>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="product-description">
           Grounded data metrics derived directly from physical municipal station audits, IoT sensor health, and route constraints.
         </p>
       </div>

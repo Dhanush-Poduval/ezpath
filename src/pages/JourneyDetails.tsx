@@ -63,9 +63,9 @@ export const JourneyDetails: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="product-page journey-details space-y-7">
       {/* Top back navigation and actions */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <Link 
           to="/plan" 
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-ink transition-colors"
@@ -117,73 +117,73 @@ export const JourneyDetails: React.FC = () => {
       )}
 
       {/* Main Journey Header Summary */}
-      <div className="p-6 bg-white rounded-2xl border border-subtle-border shadow-card space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-subtle-border pb-4">
+      <div data-reveal className="journey-panel space-y-6">
+        <div className="journey-summary-heading">
           <div>
             <div className="text-xs font-semibold text-accent uppercase tracking-wider">
               {route.label}
             </div>
-            <h1 className="font-heading font-extrabold text-2xl text-ink">
+            <h1 className="journey-title">
               {getStationName(originId)} → {getStationName(destinationId)}
             </h1>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="journey-status">
             {route.isStepFree ? (
-              <Badge variant="accessible">100% Step-free</Badge>
+              <Badge variant="accessible">Step-free</Badge>
             ) : (
               <Badge variant="disruption">Contains Stairs</Badge>
             )}
-            <Badge variant="accent">{route.evidenceConfidence} Confidence</Badge>
+            <Badge variant="accent">{route.evidenceConfidence.charAt(0).toUpperCase() + route.evidenceConfidence.slice(1).toLowerCase()} confidence</Badge>
           </div>
         </div>
 
         {/* Metrics Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+        <div className="journey-metrics">
+          <div className="journey-metric">
             <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mb-1">
               <Clock className="w-3.5 h-3.5 text-accent" /> Total Time
             </div>
             <div className="font-heading font-extrabold text-xl text-ink">
               {route.totalDurationMinutes} min
             </div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-ink-muted">
               {route.departureTime} &ndash; {route.arrivalTime}
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="journey-metric">
             <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mb-1">
               <IndianRupee className="w-3.5 h-3.5 text-emerald-600" /> Fare
             </div>
             <div className="font-heading font-extrabold text-xl text-ink">
               ₹{route.totalFareINR}
             </div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-ink-muted">
               Integrated tariff
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="journey-metric">
             <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mb-1">
-              <Footprints className="w-3.5 h-3.5 text-indigo-500" /> Walking
+              <Footprints className="w-3.5 h-3.5 text-accent" /> Walking
             </div>
             <div className="font-heading font-extrabold text-xl text-ink">
               {route.walkingDistanceMeters} m
             </div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-ink-muted">
               Max slope &lt; 1:14
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+          <div className="journey-metric">
             <div className="text-[11px] font-medium text-slate-500 flex items-center gap-1 mb-1">
               <span className="font-bold">⇌</span> Transfers
             </div>
             <div className="font-heading font-extrabold text-xl text-ink">
               {route.transfersCount}
             </div>
-            <div className="text-[10px] text-slate-400">
+            <div className="text-[10px] text-ink-muted">
               Level platform changes
             </div>
           </div>
@@ -191,9 +191,9 @@ export const JourneyDetails: React.FC = () => {
       </div>
 
       {/* Turn-by-Turn Text Itinerary */}
-      <div className="p-6 bg-white rounded-2xl border border-subtle-border shadow-card space-y-4">
+      <div className="journey-panel space-y-6">
         <h2 className="font-heading font-bold text-lg text-ink">
-          Turn-by-Turn Navigation Itinerary
+          Your journey, step by step
         </h2>
         <ItineraryTimeline legs={route.legs} />
       </div>

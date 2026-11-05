@@ -1,278 +1,93 @@
-import React, { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  ArrowRight, 
-  Accessibility, 
-  ShieldCheck, 
-  Compass, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Layers, 
-  Clock, 
-  IndianRupee, 
-  Footprints,
-  Sparkles,
-  RefreshCw,
-  Navigation
-} from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
-import { Card, CardContent } from '../components/ui/Card';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ArrowDown, ArrowRight, ArrowUpRight, Check, MoveUpRight, Accessibility, TrainFront, Footprints, Route } from 'lucide-react';
 
-export const LandingPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'shortest' | 'accessible'>('shortest');
+gsap.registerPlugin(ScrollTrigger);
+
+export const LandingPage = () => {
+  const root = useRef<HTMLDivElement>(null);
+  const route = useRef<SVGPathElement>(null);
+  const reducedMotion = useReducedMotion();
+  const [stepFree, setStepFree] = useState(true);
+
+  useLayoutEffect(() => {
+    if (reducedMotion) return;
+    const context = gsap.context(() => {
+      gsap.from('.hero-reveal', { y: 28, opacity: 0, duration: 1, stagger: 0.12, ease: 'power3.out' });
+      gsap.to('.approach-list', { '--route-progress': 1, ease: 'none', scrollTrigger: { trigger: '.approach-list', start: 'top 80%', end: 'bottom 65%', scrub: 0.5 } });
+      gsap.from('.atlas', { opacity: 0, y: 24, duration: 1.3, delay: 0.25, ease: 'power3.out' });
+    }, root);
+    return () => context.revert();
+  }, [reducedMotion]);
+
+  useLayoutEffect(() => {
+    if (!route.current || reducedMotion) return;
+    const length = route.current.getTotalLength();
+    const tween = gsap.fromTo(route.current, { strokeDasharray: length, strokeDashoffset: length }, { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' });
+    return () => { tween.revert(); };
+  }, [stepFree, reducedMotion]);
 
   return (
-    <div className="space-y-16 pb-20">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 bg-gradient-to-b from-blue-50/50 via-white to-background border-b border-subtle-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Left Column: Headlines & CTA */}
-            <div className="lg:col-span-6 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-subtle border border-blue-200 text-xs font-semibold text-accent">
-                <Compass className="w-3.5 h-3.5" />
-                <span>The shortest route isn&apos;t always the right route.</span>
-              </div>
-
-              <h1 className="font-heading font-extrabold text-4xl sm:text-5xl lg:text-6xl text-ink tracking-tight leading-[1.1]">
-                Every journey <br />
-                <span className="text-accent underline decoration-blue-200 decoration-wavy decoration-2">
-                  should be possible.
-                </span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-ink-secondary leading-relaxed max-w-xl">
-                Find routes designed around your mobility needs, not just the shortest distance. AccessPath verifies elevators, step-free boarding, walking thresholds, and live disruptions so you never get trapped at a flight of stairs.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-                <Link to="/plan">
-                  <Button size="lg" variant="primary" className="w-full sm:w-auto font-semibold shadow-floating">
-                    Plan your journey
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-                <a href="#how-it-works">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto font-medium">
-                    Explore how it works
-                  </Button>
-                </a>
-              </div>
-
-              {/* Trust Badges */}
-              <div className="pt-4 flex items-center gap-6 text-xs text-slate-500 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-accessible" /> Zero Hallucinations
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-accessible" /> Live IoT Telemetry
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Accessibility className="w-4 h-4 text-accessible" /> WCAG 2.2 AA
-                </span>
-              </div>
-            </div>
-
-            {/* Right Column: Hero Visual Demonstration (Shortest vs Accessible) */}
-            <div className="lg:col-span-6">
-              <div className="bg-white rounded-2xl p-5 border border-subtle-border shadow-floating relative">
-                {/* Mode toggle */}
-                <div className="flex items-center justify-between pb-4 border-b border-subtle-border">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Live Route Inspection Preview
-                  </div>
-                  <div className="flex rounded-lg bg-slate-100 p-0.5 text-xs font-medium">
-                    <button
-                      onClick={() => setActiveTab('shortest')}
-                      className={`px-3 py-1 rounded-md transition-colors ${
-                        activeTab === 'shortest'
-                          ? 'bg-disruption text-white font-semibold'
-                          : 'text-slate-600 hover:text-ink'
-                      }`}
-                    >
-                      Naive Shortest Route
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('accessible')}
-                      className={`px-3 py-1 rounded-md transition-colors ${
-                        activeTab === 'accessible'
-                          ? 'bg-accessible text-white font-semibold'
-                          : 'text-slate-600 hover:text-ink'
-                      }`}
-                    >
-                      AccessPath Verified
-                    </button>
-                  </div>
-                </div>
-
-                {/* Simulated Map Visual */}
-                <div className="my-4 h-64 bg-slate-50 rounded-xl border border-slate-200 relative overflow-hidden flex items-center justify-center p-4">
-                  <svg viewBox="0 0 400 200" className="w-full h-full">
-                    {/* Background Grid */}
-                    <defs>
-                      <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E2E8F0" strokeWidth="0.5"/>
-                      </pattern>
-                    </defs>
-                    <rect width="400" height="200" fill="url(#grid)" />
-
-                    {/* Naive shortest path with stairs */}
-                    {activeTab === 'shortest' && (
-                      <g>
-                        <path
-                          d="M 50 140 L 150 100 L 250 80 L 350 40"
-                          fill="none"
-                          stroke="#C43D43"
-                          strokeWidth="4"
-                          strokeDasharray="6,4"
-                          className="animate-pulse"
-                        />
-                        {/* Stairs Warning Callout */}
-                        <circle cx="150" cy="100" r="10" fill="#FEE2E2" stroke="#C43D43" strokeWidth="2" />
-                        <text x="150" y="103" fontSize="10" textAnchor="middle" fill="#C43D43" fontWeight="bold">✕</text>
-                        <rect x="90" y="55" width="120" height="28" rx="4" fill="#FFFFFF" stroke="#C43D43" strokeWidth="1" />
-                        <text x="150" y="72" fontSize="9" textAnchor="middle" fill="#C43D43" fontWeight="bold">
-                          Stairs C1: 24 Steps (Blocked)
-                        </text>
-                      </g>
-                    )}
-
-                    {/* Accessible route via Elevator A1 */}
-                    {activeTab === 'accessible' && (
-                      <g>
-                        <path
-                          d="M 50 140 L 70 160 L 220 160 L 320 80 L 350 40"
-                          fill="none"
-                          stroke="#087F6D"
-                          strokeWidth="4"
-                        />
-                        {/* Elevator A1 Callout */}
-                        <circle cx="70" cy="160" r="10" fill="#E6F4F1" stroke="#087F6D" strokeWidth="2" />
-                        <text x="70" y="163" fontSize="9" textAnchor="middle" fill="#087F6D" fontWeight="bold">✓</text>
-                        <rect x="25" y="115" width="130" height="28" rx="4" fill="#FFFFFF" stroke="#087F6D" strokeWidth="1" />
-                        <text x="90" y="132" fontSize="9" textAnchor="middle" fill="#087F6D" fontWeight="bold">
-                          Elevator A1: Operational
-                        </text>
-                      </g>
-                    )}
-
-                    {/* Origin Marker */}
-                    <circle cx="50" cy="140" r="8" fill="#2563EB" stroke="#FFFFFF" strokeWidth="2" />
-                    <text x="50" y="125" fontSize="10" textAnchor="middle" fill="#14243A" fontWeight="bold">Central Station</text>
-
-                    {/* Destination Marker */}
-                    <circle cx="350" cy="40" r="8" fill="#087F6D" stroke="#FFFFFF" strokeWidth="2" />
-                    <text x="350" y="25" fontSize="10" textAnchor="middle" fill="#14243A" fontWeight="bold">Riverside Campus</text>
-                  </svg>
-                </div>
-
-                {/* Outcome card */}
-                {activeTab === 'shortest' ? (
-                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-ink space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-disruption">
-                      <AlertTriangle className="w-4 h-4 shrink-0" />
-                      <span>Standard Shortest Engine: FAILS Accessibility</span>
-                    </div>
-                    <p className="text-slate-600">
-                      Standard GPS engines route via East concourse stairs because it is 120m shorter. A wheelchair traveller arrives only to encounter an impossible 24-step staircase with no lift.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-ink space-y-1">
-                    <div className="flex items-center gap-1.5 font-bold text-accessible">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <span>AccessPath: 100% Step-free & Feasible</span>
-                    </div>
-                    <p className="text-slate-600">
-                      Routes via Elevator A1 and low-floor Metro Blue Line. Fully compliant with &lt; 600m walking and ₹50 budget constraints.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+    <div ref={root} className="ezpath-home">
+      <section className="ezpath-hero page-width">
+        <div className="hero-copy">
+          <h1 className="hero-reveal">A city of<br />possibilities.<br /><span>Yours to explore.</span></h1>
+          <p className="hero-reveal hero-description">The best route is the one that works for you. Discover journeys shaped around your mobility, your pace, and your everyday.</p>
+          <div className="hero-reveal hero-actions">
+            <Link to="/plan" className="ezpath-button">Plan your journey <ArrowUpRight size={19} /></Link>
+            <a href="#the-ezpath-way" className="text-link">The Ezpath way <ArrowDown size={16} /></a>
           </div>
+          <div className="hero-reveal hero-note"><span className="note-line" /><span>More freedom. Fewer barriers.</span></div>
+        </div>
+        <div className="atlas">
+          <div className="atlas-heading"><span><span className="status-dot" /> A different way through</span><span>DEMO JOURNEY</span></div>
+          <svg className="city-map" viewBox="0 60 620 550" role="img" aria-label={stepFree ? 'Illustrative step-free route from Central Station via the west elevator to Riverside Campus' : 'Illustrative direct route with stairs between Central Station and Riverside Campus'}>
+            <defs><pattern id="city-blocks" width="100" height="90" patternUnits="userSpaceOnUse" patternTransform="rotate(-25)"><rect x="9" y="9" width="80" height="69" rx="6" fill="#e3e8df" /><rect x="16" y="16" width="66" height="55" rx="3" fill="none" stroke="#d7dfd4" /></pattern></defs>
+            <rect width="620" height="550" fill="#eff1e9" />
+            <rect width="620" height="550" fill="url(#city-blocks)" />
+            <path d="M485 -35 C355 105 570 175 445 300 S420 490 570 600" fill="none" stroke="#cadbd8" strokeWidth="83" />
+            <path d="M485 -35 C355 105 570 175 445 300 S420 490 570 600" fill="none" stroke="#e5eeea" strokeWidth="2" />
+            <path d="M-30 365 L650 40 M-20 175 L650 490 M220 -30 L30 550" fill="none" stroke="#f8f9f3" strokeWidth="21" />
+            <path d="M-30 365 L650 40 M-20 175 L650 490" fill="none" stroke="#d4dbd1" strokeWidth="1" />
+            <path d="M235 150 L315 112 L355 190 L275 228 Z" fill="#c9d7bc" />
+            <text x="290" y="170" textAnchor="middle" className="map-label" transform="rotate(-25 290 170)">GARDEN QUARTER</text>
+            <text x="480" y="350" className="river-label" transform="rotate(60 480 350)">RIVERSIDE</text>
+            <text x="95" y="440" className="map-label">CENTRAL DISTRICT</text>
+            <path d="M125 355 L345 250 L465 195" fill="none" stroke="#b6beb1" strokeWidth="3" strokeDasharray="5 7" />
+            <path ref={route} d={stepFree ? 'M125 355 L197 389 Q210 395 222 385 L330 282 Q340 272 354 266 L465 215 L465 195' : 'M125 355 L345 250 L465 195'} fill="none" stroke={stepFree ? '#264c3f' : '#a26643'} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+            <circle cx="125" cy="355" r="13" fill="#264c3f" stroke="white" strokeWidth="5" />
+            <circle cx="465" cy="195" r="13" fill="#264c3f" stroke="white" strokeWidth="5" />
+            <rect x="37" y="294" width="151" height="36" rx="5" fill="#fff" /><text x="112" y="317" textAnchor="middle" className="station-label">Central Station</text>
+            <rect x="385" y="134" width="184" height="36" rx="5" fill="#fff" /><text x="477" y="157" textAnchor="middle" className="station-label">Riverside Campus</text>
+            <circle cx={stepFree ? 245 : 345} cy={stepFree ? 363 : 250} r="15" fill="#fff" stroke={stepFree ? '#264c3f' : '#a26643'} strokeWidth="1.5" />
+            <text x={stepFree ? 245 : 345} y={stepFree ? 368 : 255} textAnchor="middle" fill="#264c3f" fontSize="16">{stepFree ? '↕' : '!'}</text>
+            <text x={stepFree ? 264 : 360} y={stepFree ? 390 : 278} className="station-label">{stepFree ? 'West elevator' : '24 steps'}</text>
+          </svg>
+          <div className="map-compass"><MoveUpRight size={22} /><span>N</span></div>
+          <div className="journey-preview">
+            <div className="preview-top"><span className="preview-icon"><TrainFront size={20} /></span><div><strong>Central → Riverside</strong><span>Metro Blue Line · Example journey</span></div><ArrowUpRight size={19} /></div>
+            <div className="route-switch" aria-label="Compare example routes">
+              <button aria-pressed={stepFree} onClick={() => setStepFree(true)}>Step-free route</button>
+              <button aria-pressed={!stepFree} onClick={() => setStepFree(false)}>Shortest route</button>
+            </div>
+            <AnimatePresence mode="wait" initial={false}><motion.div key={String(stepFree)} className="preview-result" initial={{ opacity: reducedMotion ? 1 : 0 }} animate={{ opacity: 1 }} exit={{ opacity: reducedMotion ? 1 : 0 }} transition={{ duration: 0.15 }} aria-live="polite"><span>{stepFree ? <Check size={15} /> : <Footprints size={15} />}{stepFree ? 'Step-free, all the way' : 'Includes a 24-step staircase'}</span><strong>{stepFree ? '18 min' : '14 min'}</strong></motion.div></AnimatePresence>
+          </div>
+          <div className="atlas-caption"><span>Designed around you, not just the distance.</span><span>EZ / 01</span></div>
         </div>
       </section>
-
-      {/* Interactive Demonstration Section: "Why shortest isn't always best" */}
-      <section id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <Badge variant="accent">Transparent Decision Engine</Badge>
-          <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-ink">
-            How AccessPath Evaluates Route Feasibility
-          </h2>
-          <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Other apps treat accessibility as a tag or a colour. AccessPath treats accessibility as hard mathematical constraints across a multimodal graph.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-accent flex items-center justify-center font-bold">
-                1
-              </div>
-              <h3 className="font-heading font-bold text-lg text-ink">
-                Hard Physical Constraints
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                If a wheelchair user requires step-free transit, paths with stairs are physically pruned from graph traversal. We never silently relax requirements.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-accessible flex items-center justify-center font-bold">
-                2
-              </div>
-              <h3 className="font-heading font-bold text-lg text-ink">
-                Live Hardware Telemetry
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Every elevator and ramp status is backed by sensor timestamps and municipal audits. When a lift fails, affected journeys are flagged immediately.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6 space-y-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
-                3
-              </div>
-              <h3 className="font-heading font-bold text-lg text-ink">
-                Instant Dynamic Replanning
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                An outage triggers an automated re-route under the exact same constraints. You see the transparent tradeoff diff in time, fare, and walking.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Big CTA Card */}
-        <div className="bg-gradient-to-r from-ink to-slate-900 rounded-3xl p-8 sm:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-floating">
-          <div className="space-y-3 max-w-xl">
-            <h3 className="font-heading font-extrabold text-2xl sm:text-3xl tracking-tight">
-              Ready to experience confident navigation?
-            </h3>
-            <p className="text-slate-300 text-sm leading-relaxed">
-              Try our interactive journey planner and see how live disruptions dynamically replan your route without compromise.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 shrink-0">
-            <Link to="/plan">
-              <Button size="lg" variant="primary" className="font-bold">
-                Launch Journey Planner
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        </div>
+      <div data-reveal className="principle-strip page-width"><span>Consider every part of the journey.</span><div><span><Accessibility size={18} /> Step-free access</span><span><Footprints size={18} /> Your walking limits</span><span><Route size={18} /> Thoughtful connections</span></div></div>
+      <section id="the-ezpath-way" className="approach-section page-width">
+        <div data-reveal className="approach-title"><h2>Less uncertainty.<br /><span>More possibility.</span></h2><p>A few extra minutes can make all the difference. Ezpath brings the details that matter into one considered journey.</p><Link className="text-link" to="/plan">Find your way <ArrowRight size={18} /></Link></div>
+        <div className="approach-list">{[
+          ['Your needs set the route.', 'Choose your mobility profile, walking distance, and budget. Your requirements stay at the heart of every connection.'],
+          ['Know what lies ahead.', 'Explore step-free entrances, elevator status, and accessible boarding before you leave. See the evidence behind your route.'],
+          ['Plans change. Keep moving.', 'When a disruption affects your journey, compare an alternative with the same accessibility requirements. Save it for offline access.'],
+        ].map(([title, description], i) => <article data-reveal key={title}><span className="approach-index">0{i + 1}</span><div><h3>{title}</h3><p>{description}</p></div></article>)}</div>
       </section>
+      <section className="closing-section"><div data-reveal className="page-width"><div><h2>Your next chapter<br />starts with a journey.</h2><p>Make room for where you want to go.</p></div><Link to="/plan" className="ezpath-button light">Let’s find your route <ArrowUpRight size={20} /></Link></div></section>
     </div>
   );
 };
-

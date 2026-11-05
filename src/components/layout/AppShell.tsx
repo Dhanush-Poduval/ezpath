@@ -1,4 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useScrollReveal } from '../../hooks/useScrollReveal';
+import { ScrollProgress } from './ScrollProgress';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { SkipLink } from '../ui/SkipLink';
@@ -11,6 +14,10 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+  const main = useRef<HTMLElement>(null);
+  const { pathname } = useLocation();
+  useLayoutEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [pathname]);
+  useScrollReveal(main, pathname);
   const { handleDisruptionNotification } = useJourneyStore();
   const { loadNetworkData } = useOperatorStore();
 
@@ -31,8 +38,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-ink">
       <SkipLink />
+      <ScrollProgress />
       <Navbar />
-      <main id="main-content" className="flex-1 flex flex-col">
+      <main ref={main} id="main-content" className="flex-1 flex flex-col">
         {children}
       </main>
       <Footer />

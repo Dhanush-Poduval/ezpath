@@ -38,6 +38,7 @@ export const ProfileBuilder: React.FC = () => {
               <button
                 key={opt.id}
                 type="button"
+                aria-pressed={isSelected}
                 onClick={() => setProfile(opt.id)}
                 className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-medium transition-all ${
                   isSelected
@@ -54,7 +55,7 @@ export const ProfileBuilder: React.FC = () => {
       </div>
 
       {/* Profile active summary sentence */}
-      <div className="p-3 rounded-xl bg-accent-subtle/50 border border-blue-100 text-xs text-ink space-y-1">
+      <div className="p-3 rounded-xl bg-accent-subtle/50 border border-accent/15 text-xs text-ink space-y-1">
         <div className="flex items-center gap-1.5 font-semibold text-accent">
           <Info className="w-4 h-4 shrink-0" />
           <span>Active Requirements Summary</span>

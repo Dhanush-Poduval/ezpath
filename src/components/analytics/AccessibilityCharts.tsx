@@ -1,4 +1,5 @@
 import React from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { 
   BarChart, 
   Bar, 
@@ -26,15 +27,16 @@ export const AccessibilityCharts: React.FC<AccessibilityChartsProps> = ({
   stepFreeEdges,
   stairsEdges,
 }) => {
+  const reducedMotion = useReducedMotion();
   const liftData = [
-    { name: 'Operational', value: operationalLifts, color: '#087F6D' },
+    { name: 'Operational', value: operationalLifts, color: '#264C3F' },
     { name: 'Unavailable', value: disruptedLifts, color: '#C43D43' },
   ];
 
   const edgeData = [
-    { category: 'Step-Free Ramps & Corridors', count: stepFreeEdges, fill: '#087F6D' },
+    { category: 'Step-Free Ramps & Corridors', count: stepFreeEdges, fill: '#264C3F' },
     { category: 'Stairs & Steep Levels', count: stairsEdges, fill: '#C43D43' },
-    { category: 'Low-Floor Transit Legs', count: 6, fill: '#2563EB' },
+    { category: 'Low-Floor Transit Legs', count: 6, fill: '#64775B' },
   ];
 
   const evidenceData = [
@@ -58,7 +60,7 @@ export const AccessibilityCharts: React.FC<AccessibilityChartsProps> = ({
         <CardContent className="h-64 flex flex-col items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie
+              <Pie isAnimationActive={!reducedMotion}
                 data={liftData}
                 cx="50%"
                 cy="50%"
@@ -94,7 +96,7 @@ export const AccessibilityCharts: React.FC<AccessibilityChartsProps> = ({
               <XAxis type="number" />
               <YAxis dataKey="category" type="category" width={110} tick={{ fontSize: 10 }} />
               <Tooltip />
-              <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+              <Bar isAnimationActive={!reducedMotion} dataKey="count" radius={[0, 4, 4, 0]}>
                 {edgeData.map((entry, index) => (
                   <Cell key={`bar-${index}`} fill={entry.fill} />
                 ))}
@@ -120,7 +122,7 @@ export const AccessibilityCharts: React.FC<AccessibilityChartsProps> = ({
               <XAxis dataKey="name" tick={{ fontSize: 11 }} />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="count" fill="#2563EB" radius={[4, 4, 0, 0]} />
+              <Bar isAnimationActive={!reducedMotion} dataKey="count" fill="#64775B" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>

@@ -54,15 +54,15 @@ export const SavedJourneys: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="product-page space-y-8">
       {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div data-reveal className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="text-xs font-semibold text-accent uppercase tracking-wider">
-            Local IndexedDB Cache
+            Available offline
           </div>
-          <h1 className="font-heading font-extrabold text-2xl sm:text-3xl text-ink">
-            Saved Offline Journeys
+          <h1 className="product-title">
+            Your saved journeys
           </h1>
         </div>
 
@@ -80,7 +80,7 @@ export const SavedJourneys: React.FC = () => {
           <div className="space-y-0.5">
             <div className="font-bold text-warning">Offline Mode Active</div>
             <p className="text-slate-600">
-              You are currently offline. AccessPath is serving cached journeys from your browser&apos;s IndexedDB. Live elevator IoT updates and realtime rerouting are disabled.
+              You are currently offline. Ezpath is showing your saved journeys. Live elevator updates and rerouting are unavailable until you reconnect.
             </p>
           </div>
         </div>
@@ -88,7 +88,7 @@ export const SavedJourneys: React.FC = () => {
 
       {/* Empty State */}
       {!isLoading && savedJourneys.length === 0 && (
-        <div className="text-center py-16 p-8 bg-white rounded-2xl border border-subtle-border shadow-card space-y-4">
+        <div data-reveal className="text-center py-16 p-8 bg-white rounded-2xl border border-subtle-border shadow-card space-y-4">
           <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
             <Bookmark className="w-6 h-6" />
           </div>

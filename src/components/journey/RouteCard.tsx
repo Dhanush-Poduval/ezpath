@@ -36,6 +36,7 @@ export const RouteCard: React.FC<RouteCardProps> = ({
 
   return (
     <div
+      data-reveal
       role="button"
       tabIndex={0}
       onClick={onSelect}
@@ -45,16 +46,16 @@ export const RouteCard: React.FC<RouteCardProps> = ({
           onSelect();
         }
       }}
-      className={`p-4 rounded-xl border text-left transition-all cursor-pointer relative ${
+      className={`route-card p-5 rounded-xl border text-left transition-all cursor-pointer relative ${
         isAffected
           ? 'bg-rose-50/50 border-disruption ring-1 ring-disruption/50'
           : isSelected
-          ? 'bg-white border-accessible shadow-floating ring-2 ring-accessible/30'
-          : 'bg-white border-subtle-border hover:border-slate-300 shadow-card hover:shadow-md'
+          ? 'bg-white border-accent ring-1 ring-accent/20'
+          : 'bg-white border-subtle-border hover:border-accent/40'
       }`}
     >
       {/* Top badges & label */}
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-1.5 flex-wrap">
           {route.categoryTags.includes('fastest') && (
             <Badge variant="accessible">Fastest</Badge>
@@ -119,7 +120,7 @@ export const RouteCard: React.FC<RouteCardProps> = ({
         {route.isStepFree ? (
           <span className="flex items-center gap-1 font-semibold text-accessible text-[11px]">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Step-free Verified
+            Step-free verified
           </span>
         ) : (
           <span className="flex items-center gap-1 font-semibold text-disruption text-[11px]">

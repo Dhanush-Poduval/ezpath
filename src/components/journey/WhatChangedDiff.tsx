@@ -57,7 +57,7 @@ export const WhatChangedDiff: React.FC = () => {
       </div>
 
       <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-        AccessPath successfully rerouted around the outage at <strong className="text-ink">{affectedFacilityName}</strong> while maintaining all your original physical accessibility constraints.
+        Ezpath successfully rerouted around the outage at <strong className="text-ink">{affectedFacilityName}</strong> while maintaining all your original physical accessibility constraints.
       </p>
 
       {/* Diff metrics grid */}

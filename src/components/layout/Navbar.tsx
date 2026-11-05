@@ -1,120 +1,30 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Compass, Bookmark, ShieldAlert, RotateCcw, AlertTriangle, Activity } from 'lucide-react';
+﻿import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { ArrowUpRight, Menu, X, RotateCcw } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
 import { useOperatorStore } from '../../stores/operatorStore';
 import { useJourneyStore } from '../../stores/journeyStore';
 
-export const Navbar: React.FC = () => {
+export const Navbar = () => {
   const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const reduced = useReducedMotion();
   const { disruptions, resetDemo, triggerElevatorFailure, isSimulating } = useOperatorStore();
   const { searchJourneys } = useJourneyStore();
-
-  const isOperatorRoute = location.pathname.startsWith('/operator');
-  const hasActiveDisruption = disruptions.some(d => d.isActive);
-
-  const handleReset = async () => {
-    await resetDemo();
-    await searchJourneys();
-  };
-
-  const handleTriggerDemo = async () => {
-    await triggerElevatorFailure();
-  };
-
-  return (
-    <header className="sticky top-0 z-40 w-full border-b border-subtle-border bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
-              <Compass className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="font-heading font-extrabold text-xl tracking-tight text-ink">
-                Access<span className="text-accent">Path</span>
-              </span>
-              <span className="hidden sm:inline-block text-[11px] text-ink-muted ml-2 font-medium border-l border-slate-200 pl-2">
-                Accessibility-First Multimodal Transit
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        {/* Navigation links */}
-        <nav className="hidden md:flex items-center gap-1 font-medium text-sm text-ink-secondary">
-          <Link
-            to="/plan"
-            className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-              location.pathname === '/plan' ? 'text-accent bg-accent-subtle font-semibold' : 'hover:text-ink hover:bg-slate-100'
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            Journey Planner
-          </Link>
-          <Link
-            to="/saved"
-            className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-              location.pathname === '/saved' ? 'text-accent bg-accent-subtle font-semibold' : 'hover:text-ink hover:bg-slate-100'
-            }`}
-          >
-            <Bookmark className="w-4 h-4" />
-            Saved Journeys
-          </Link>
-          <Link
-            to="/operator"
-            className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 ${
-              isOperatorRoute ? 'text-blue-600 bg-blue-50 font-semibold' : 'hover:text-ink hover:bg-slate-100'
-            }`}
-          >
-            <ShieldAlert className="w-4 h-4" />
-            Operator Console
-          </Link>
-        </nav>
-
-        {/* Demo Controls Bar */}
-        <div className="flex items-center gap-2">
-          {hasActiveDisruption ? (
-            <Badge variant="disruption" className="hidden lg:flex items-center gap-1 animate-pulse">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Elevator A1 Outage Active
-            </Badge>
-          ) : (
-            <Badge variant="accessible" className="hidden lg:flex items-center gap-1">
-              <Activity className="w-3.5 h-3.5" />
-              Network 100% Operational
-            </Badge>
-          )}
-
-          {/* Hackathon Quick Action Button */}
-          {!hasActiveDisruption ? (
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={handleTriggerDemo}
-              isLoading={isSimulating}
-              title="Simulates an elevator failure at Central Station to test dynamic rerouting"
-              className="text-xs font-semibold"
-            >
-              Simulate Outage
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleReset}
-              isLoading={isSimulating}
-              className="text-xs gap-1 border-slate-300 text-slate-700"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reset Demo
-            </Button>
-          )}
-        </div>
-      </div>
-    </header>
-  );
+  const active = disruptions.some(d => d.isActive);
+  const isHome = location.pathname === '/';
+  useEffect(() => { setOpen(false); }, [location.pathname]);
+  const links = [{ to: '/plan', label: 'Journey planner' }, { to: '/saved', label: 'Saved journeys' }, { to: '/operator', label: 'For operators' }];
+  return <header className="site-header" onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); toggle.current?.focus(); } }}>
+    <div className="page-width header-inner">
+      <Link to="/" className="brand" aria-label="Ezpath home"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 25 15 7h11L16 25H5Z" stroke="currentColor" strokeWidth="2" /><path d="M10 16h12M21 7l-10 18" stroke="currentColor" strokeWidth="2" /></svg>ezpath<span className="brand-period">.</span></Link>
+      <nav className="desktop-nav" aria-label="Main navigation">{links.map(link => <NavLink key={link.to} to={link.to}>{link.label}</NavLink>)}</nav>
+      <Link to="/plan" className="nav-cta">Plan a journey <ArrowUpRight size={16} /></Link>
+      <button ref={toggle} className="mobile-toggle" aria-label={open ? 'Close navigation' : 'Open navigation'} aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
+    </div>
+    <AnimatePresence>{open && <motion.nav id="mobile-navigation" aria-label="Mobile navigation" className="mobile-nav" initial={{ height: reduced ? 'auto' : 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: reduced ? 'auto' : 0, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>{links.map(link => <NavLink key={link.to} to={link.to}>{link.label}<ArrowUpRight size={16} /></NavLink>)}</motion.nav>}</AnimatePresence>
+    {!isHome && <div className="demo-toolbar"><div className="page-width"><span><span className="status-dot" />Demo network · {active ? 'Disruption reported' : 'All facilities operational'}</span><Button size="sm" variant="ghost" isLoading={isSimulating} onClick={async () => { if (active) { await resetDemo(); await searchJourneys(); } else { await triggerElevatorFailure(); } }}>{active && <RotateCcw size={13} />}{active ? 'Reset demo' : 'Simulate outage'}</Button></div></div>}
+  </header>;
 };
-

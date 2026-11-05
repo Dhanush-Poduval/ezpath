@@ -8,19 +8,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#F7F9FC',
+        background: '#F7F8F4',
         surface: '#FFFFFF',
         ink: {
-          DEFAULT: '#14243A',
+          DEFAULT: '#1D332B',
           secondary: '#4B5563',
           muted: '#64748B',
           subtle: '#94A3B8',
         },
         accent: {
-          DEFAULT: '#2563EB',
-          hover: '#1D4ED8',
-          subtle: '#EFF6FF',
-          dark: '#1E40AF',
+          DEFAULT: '#264C3F',
+          hover: '#183B2E',
+          subtle: '#EEF2E8',
+          dark: '#203E32',
         },
         accessible: {
           DEFAULT: '#087F6D',
@@ -41,21 +41,21 @@ export default {
           border: '#FECACA',
         },
         subtle: {
-          border: '#E2E8F0',
+          border: '#DCE1D7',
           hover: '#F1F5F9',
         },
         operator: {
-          bg: '#0B132B',
-          surface: '#1C2541',
-          card: '#1F2A48',
-          border: '#3A506B',
-          ink: '#F8FAFC',
-          accent: '#4895EF',
+          bg: '#F7F8F4',
+          surface: '#FFFFFF',
+          card: '#EEF2E8',
+          border: '#DCE1D7',
+          ink: '#1D332B',
+          accent: '#264C3F',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        heading: ['Manrope', 'Inter', 'sans-serif'],
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        heading: ['DM Sans', 'sans-serif'],
       },
       boxShadow: {
         'subtle': '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05)',

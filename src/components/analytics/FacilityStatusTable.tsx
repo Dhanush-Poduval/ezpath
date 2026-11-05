@@ -24,8 +24,8 @@ export const FacilityStatusTable: React.FC<FacilityStatusTableProps> = ({
   isLoading
 }) => {
   return (
-    <div className="overflow-x-auto rounded-xl border border-subtle-border bg-white shadow-card">
-      <table className="w-full text-left text-xs border-collapse">
+    <div data-reveal className="overflow-x-auto rounded-xl border border-subtle-border bg-white">
+      <table className="min-w-[760px] w-full text-left text-xs border-collapse">
         <thead className="bg-slate-50 border-b border-subtle-border text-slate-500 uppercase tracking-wider text-[11px]">
           <tr>
             <th className="py-3 px-4">Facility / Hardware</th>

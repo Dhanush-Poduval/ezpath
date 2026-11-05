@@ -27,18 +27,18 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({ legs }) =>
         const isRamp = leg.legType === 'ramp';
 
         return (
-          <div key={leg.id} className="relative flex items-start gap-3 text-xs" role="listitem">
+          <div key={leg.id} data-reveal className="relative flex items-start gap-3 text-xs" role="listitem">
             {/* Timeline line */}
             {index < legs.length - 1 && (
-              <div className="absolute top-7 left-3.5 -bottom-5 w-0.5 bg-slate-200" />
+              <div className="absolute top-7 left-3.5 -bottom-5 w-0.5 bg-subtle-border" />
             )}
 
             {/* Icon */}
             <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 z-10 text-white shadow-sm ${
               isStairs ? 'bg-disruption ring-2 ring-rose-200' :
-              isElevator ? 'bg-emerald-600 ring-2 ring-emerald-200' :
-              isTransit ? 'bg-accent ring-2 ring-blue-200' :
-              isRamp ? 'bg-accessible ring-2 ring-teal-200' :
+              isElevator ? 'bg-accent ring-2 ring-accent/15' :
+              isTransit ? 'bg-accent ring-2 ring-accent/15' :
+              isRamp ? 'bg-accessible ring-2 ring-accessible/15' :
               'bg-slate-600 ring-2 ring-slate-200'
             }`}>
               {isTransit ? (leg.legType === 'bus' ? <Bus className="w-3.5 h-3.5" /> : <Train className="w-3.5 h-3.5" />) :
@@ -47,10 +47,10 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({ legs }) =>
             </div>
 
             {/* Leg Details */}
-            <div className="flex-1 p-3 bg-white rounded-xl border border-subtle-border shadow-subtle space-y-2">
+            <div className="flex-1 min-w-0 pb-6 border-b border-subtle-border space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="font-heading font-bold text-sm text-ink">
+                  <div className="font-heading font-medium text-sm text-ink">
                     {leg.lineName || `${leg.fromNodeName} → ${leg.toNodeName}`}
                   </div>
                   <div className="text-slate-500 text-[11px] mt-0.5">
@@ -60,13 +60,13 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({ legs }) =>
 
                 <div className="text-right shrink-0">
                   <span className="font-bold text-ink">{leg.durationMinutes} min</span>
-                  <div className="text-[10px] text-slate-400">{leg.distanceMeters} m</div>
+                  <div className="text-[10px] text-ink-muted">{leg.distanceMeters} m</div>
                 </div>
               </div>
 
               {/* Step instructions */}
               {leg.steps.map((step, sIdx) => (
-                <div key={sIdx} className="text-xs text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100 flex items-start justify-between gap-2">
+                <div key={sIdx} className="text-xs leading-relaxed text-ink-secondary bg-accent-subtle/50 p-3 rounded-md flex flex-col sm:flex-row items-start justify-between gap-2">
                   <span>{step.instruction}</span>
                   {step.stepFree ? (
                     <span className="text-[10px] font-semibold text-accessible shrink-0 flex items-center gap-0.5">
@@ -81,9 +81,9 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({ legs }) =>
               ))}
 
               {/* Audit / Telemetry evidence */}
-              <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+              <div className="flex flex-wrap gap-2 items-center justify-between text-[10px] text-ink-muted pt-1 border-t border-slate-100">
                 <span className="flex items-center gap-1">
-                  <Database className="w-3 h-3" /> {leg.evidenceSource}
+                  <Database className="w-3 h-3" /> {leg.evidenceSource.replace(/_/g, ' ')}
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3" /> {new Date(leg.evidenceTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

@@ -164,7 +164,7 @@ export const ConstraintInspector: React.FC<ConstraintInspectorProps> = ({
               <span>Transparent Accessibility Scoring</span>
             </div>
             <p className="text-[11px] leading-relaxed">
-              AccessPath does not guess or assume accessibility. Every leg of this itinerary has been checked against physical station audits, municipal telemetry, and IoT lift status sensors.
+              Ezpath does not guess or assume accessibility. Every leg of this itinerary has been checked against physical station audits, municipal telemetry, and IoT lift status sensors.
             </p>
           </div>
         </div>
