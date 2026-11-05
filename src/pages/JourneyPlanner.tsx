@@ -70,9 +70,9 @@ export const JourneyPlanner: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden relative">
+    <div className="flex-1 flex flex-col min-h-[calc(100vh-6rem)] lg:h-[calc(100vh-6rem)] overflow-hidden relative">
       {/* Three-Region Desktop Workspace Container */}
-      <div className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden relative">
+      <div className="flex-1 flex flex-col lg:flex-row h-full min-h-[500px] overflow-hidden relative">
 
         {/* 1. LEFT PANEL — Journey Controls (340-380px, collapsible) */}
         <aside 
@@ -114,12 +114,12 @@ export const JourneyPlanner: React.FC = () => {
         )}
 
         {/* 2. CENTRE — Interactive Map Workspace (Largest available area) */}
-        <div className="flex-1 h-full relative overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-[500px] h-full relative overflow-hidden flex flex-col bg-slate-100">
           <InteractiveMap
             routes={routes}
             selectedRouteId={selectedRouteId}
             onSelectRoute={(id) => setSelectedRouteId(id)}
-            className="w-full h-full"
+            className="w-full h-full min-h-[500px]"
           />
         </div>
 
