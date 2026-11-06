@@ -12,6 +12,7 @@ export interface RouteSearchResult {
   routes: JourneyRoute[];
   searchTimestamp: string;
   graphVersion: string;
+  message?: string | null;
 }
 
 export interface ReplanResult {

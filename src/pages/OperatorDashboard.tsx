@@ -19,6 +19,8 @@ import {
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { authService } from '../services/auth/cognito';
+import { isDemoMode } from '../config/runtime';
+import { DisruptionEvent } from '../types';
 
 export const OperatorDashboard: React.FC = () => {
   const {
@@ -36,17 +38,21 @@ export const OperatorDashboard: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDisruption, setNewDisruption] = useState({
-    entityId: 'elev_a1',
-    entityName: 'Elevator A1 (Platform 1-2 & Concourse)',
-    stationName: 'Central Station',
-    type: 'elevator_outage' as const,
-    severity: 'critical' as const,
-    reason: 'Routine sensor recalibration and maintenance',
-    affectedLinesOrStops: ['Central Station Metro Link'],
-    impactOnAccessibility: 'Wheelchair access requires alternate ramp.',
+    entityId: isDemoMode ? 'elev_a1' : '',
+    entityName: isDemoMode ? 'Elevator A1 (Platform 1-2 & Concourse)' : '',
+    stationName: isDemoMode ? 'Central Station' : 'SRM Kattankulathur',
+    type: 'elevator_outage' as DisruptionEvent['type'],
+    severity: 'critical' as DisruptionEvent['severity'],
+    reason: isDemoMode ? 'Routine sensor recalibration and maintenance' : '',
+    affectedLinesOrStops: isDemoMode ? ['Central Station Metro Link'] : [],
+    impactOnAccessibility: isDemoMode ? 'Wheelchair access requires alternate ramp.' : '',
   });
 
   const currentUser = authService.getCurrentUser();
+  const operatorName = !isDemoMode && currentUser.isDemoAccount
+    ? 'Operator authentication pending'
+    : currentUser.name;
+  const canWrite = isDemoMode || !currentUser.isDemoAccount;
   const activeDisruptions = disruptions.filter(d => d.isActive);
   const operationalLifts = facilities.filter(f => f.type === 'elevator' && f.operational).length;
   const unavailableLifts = facilities.filter(f => f.type === 'elevator' && !f.operational).length;
@@ -62,12 +68,18 @@ export const OperatorDashboard: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const metrics = [
+  const metrics = isDemoMode ? [
     { label: 'Active disruptions', value: activeDisruptions.length, detail: 'Requiring attention', alert: activeDisruptions.length > 0 },
     { label: 'Operational lifts', value: operationalLifts, detail: 'Available across the network', alert: false },
     { label: 'Unavailable lifts', value: unavailableLifts, detail: 'Awaiting restoration', alert: unavailableLifts > 0 },
     { label: 'Closed segments', value: closedSegments, detail: 'Alternative route required', alert: closedSegments > 0 },
     { label: 'Accessibility coverage', value: '94.2%', detail: 'Demo audit coverage', alert: false },
+  ] : [
+    { label: 'Active disruptions', value: activeDisruptions.length, detail: 'Operator-reported events', alert: activeDisruptions.length > 0 },
+    { label: 'Catalog locations', value: nodes.length, detail: 'Source-backed selection points', alert: false },
+    { label: 'Tracked facilities', value: facilities.length, detail: 'Verified inventory not connected', alert: false },
+    { label: 'Closed segments', value: activeDisruptions.filter(event => event.type === 'path_closure' || event.type === 'entrance_closure').length, detail: 'Active reported closures', alert: activeDisruptions.some(event => event.type === 'path_closure' || event.type === 'entrance_closure') },
+    { label: 'Accessibility coverage', value: 'Not measured', detail: 'No physical audit claim', alert: false },
   ];
 
   return (
@@ -75,19 +87,19 @@ export const OperatorDashboard: React.FC = () => {
       <div data-reveal className="operator-heading">
         <div><h1 className="product-title">A clearer view of your network.</h1>
           <p className="product-description">Monitor access. Manage disruptions. Keep every journey moving.</p>
-          <div className="operator-session"><span className="status-dot" /> {currentUser.name}<span className="session-divider" /><span>Demo workspace</span></div>
+          <div className="operator-session"><span className="status-dot" /> {operatorName}<span className="session-divider" /><span>{isDemoMode ? 'Demo workspace' : 'AWS operator workspace'}</span></div>
         </div>
         <nav className="operator-actions" aria-label="Operator tools">
           <Link to="/operator/network" className="workspace-link"><Server size={15} /> Infrastructure</Link>
           <Link to="/operator/analytics" className="workspace-link"><BarChart2 size={15} /> Analytics</Link>
-          <Button size="sm" variant="outline" onClick={() => resetDemo()} isLoading={isSimulating}><RotateCcw size={14} /> Reset demo</Button>
+          {isDemoMode && <Button size="sm" variant="outline" onClick={() => resetDemo()} isLoading={isSimulating}><RotateCcw size={14} /> Reset demo</Button>}
         </nav>
       </div>
       <div data-reveal className="operator-metrics">
         {metrics.map(metric => <div key={metric.label} className="operator-metric"><span>{metric.label}</span><strong className={metric.alert ? 'text-disruption' : ''}>{metric.value}</strong><small>{metric.detail}</small></div>)}
       </div>
       {/* Hackathon Demo Scenario Presets */}
-      <div data-reveal className="workspace-panel space-y-6">
+      {isDemoMode && <div data-reveal className="workspace-panel space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
 
@@ -125,7 +137,7 @@ export const OperatorDashboard: React.FC = () => {
             );
           })}
         </div>
-      </div>
+      </div>}
 
       {/* Active Disruptions Management Panel */}
       <div data-reveal className="workspace-panel space-y-6">
@@ -141,6 +153,8 @@ export const OperatorDashboard: React.FC = () => {
             size="sm"
             variant="operator"
             onClick={() => setIsModalOpen(true)}
+            disabled={!canWrite}
+            title={canWrite ? 'Report a disruption' : 'Cognito operator sign-in is required'}
             className="text-xs"
           >
             <Plus className="w-3.5 h-3.5 mr-1" />
@@ -151,7 +165,9 @@ export const OperatorDashboard: React.FC = () => {
         {activeDisruptions.length === 0 ? (
           <div className="network-empty">
             <CheckCircle2 className="w-8 h-8 text-accessible mx-auto mb-2" />
-            <div>No active disruptions on the network. All elevators and accessible routes are operational.</div>
+            <div>{isDemoMode
+              ? 'No active disruptions on the demo network. All scenario facilities are operational.'
+              : 'No active operator-reported disruptions. This does not confirm that every campus facility is operational.'}</div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -175,6 +191,7 @@ export const OperatorDashboard: React.FC = () => {
                     size="sm"
                     variant="outline"
                     onClick={() => resolveDisruption(disruption.id)}
+                    disabled={!canWrite}
                     className="border-emerald-600/40 text-accessible bg-accessible-subtle hover:bg-accessible-subtle text-xs"
                   >
                     Resolve & Restore
@@ -202,26 +219,70 @@ export const OperatorDashboard: React.FC = () => {
             <form onSubmit={handleCreateSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block text-ink-muted mb-1">Affected Facility</label>
-                <select
-                  value={newDisruption.entityId}
-                  onChange={(e) => {
-                    const fac = facilities.find(f => f.id === e.target.value);
-                    setNewDisruption({
-                      ...newDisruption,
-                      entityId: e.target.value,
-                      entityName: fac ? fac.name : e.target.value,
-                      stationName: fac ? fac.stationName : 'Transit Node'
-                    });
-                  }}
-                  className="w-full p-2.5 rounded-lg bg-operator-bg border border-operator-border text-ink text-xs"
-                >
-                  {facilities.map(fac => (
-                    <option key={fac.id} value={fac.id}>
-                      {fac.name} &mdash; {fac.stationName}
-                    </option>
-                  ))}
-                </select>
+                {facilities.length > 0 ? (
+                  <select
+                    value={newDisruption.entityId}
+                    onChange={(e) => {
+                      const fac = facilities.find(f => f.id === e.target.value);
+                      setNewDisruption({
+                        ...newDisruption,
+                        entityId: e.target.value,
+                        entityName: fac ? fac.name : e.target.value,
+                        stationName: fac ? fac.stationName : 'Transit Node'
+                      });
+                    }}
+                    className="w-full p-2.5 rounded-lg bg-operator-bg border border-operator-border text-ink text-xs"
+                  >
+                    {facilities.map(fac => (
+                      <option key={fac.id} value={fac.id}>
+                        {fac.name} &mdash; {fac.stationName}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={newDisruption.entityId}
+                    onChange={(e) => setNewDisruption({ ...newDisruption, entityId: e.target.value })}
+                    placeholder="Exact graph identifier, for example node:123"
+                    className="w-full p-2.5 rounded-lg bg-operator-bg border border-operator-border text-ink text-xs"
+                    required
+                  />
+                )}
               </div>
+
+              {!isDemoMode && (
+                <div>
+                  <label className="block text-ink-muted mb-1">Facility or path name</label>
+                  <input
+                    type="text"
+                    value={newDisruption.entityName}
+                    onChange={(e) => setNewDisruption({ ...newDisruption, entityName: e.target.value })}
+                    className="w-full p-2.5 rounded-lg bg-operator-bg border border-operator-border text-ink text-xs"
+                    required
+                  />
+                </div>
+              )}
+
+              {!isDemoMode && (
+                <div>
+                  <label className="block text-ink-muted mb-1">Disruption type</label>
+                  <select
+                    value={newDisruption.type}
+                    onChange={(e) => setNewDisruption({
+                      ...newDisruption,
+                      type: e.target.value as DisruptionEvent['type'],
+                    })}
+                    className="w-full p-2.5 rounded-lg bg-operator-bg border border-operator-border text-ink text-xs"
+                  >
+                    <option value="elevator_outage">Elevator outage</option>
+                    <option value="path_closure">Path closure</option>
+                    <option value="entrance_closure">Entrance closure</option>
+                    <option value="service_delay">Service delay</option>
+                    <option value="bus_cancellation">Bus cancellation</option>
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-ink-muted mb-1">Disruption Reason</label>

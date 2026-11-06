@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import { FacilityStatus, DisruptionEvent, NetworkNode, NetworkEdge } from '../types';
 import { demoApiAdapter } from '../services/api/demoAdapter';
+import { getApiClient } from '../services/api';
 import { liveEventsService } from '../services/realtime/liveEvents';
 import { DEMO_SCENARIOS } from '../data/demoNetwork';
+import { isDemoMode } from '../config/runtime';
 
 interface OperatorState {
   nodes: NetworkNode[];
@@ -26,12 +28,15 @@ export const useOperatorStore = create<OperatorState>((set, get) => ({
   edges: [],
   facilities: [],
   disruptions: [],
-  selectedScenarioId: 'scenario_1',
+  selectedScenarioId: isDemoMode ? 'scenario_1' : '',
   isSimulating: false,
 
   loadNetworkData: async () => {
-    const data = await demoApiAdapter.getNetworkEntities();
-    const disruptions = await demoApiAdapter.getActiveEvents();
+    const client = getApiClient();
+    const [data, disruptions] = await Promise.all([
+      client.getNetworkEntities(),
+      client.getActiveEvents(),
+    ]);
     set({
       nodes: data.nodes,
       edges: data.edges,
@@ -41,6 +46,7 @@ export const useOperatorStore = create<OperatorState>((set, get) => ({
   },
 
   applyScenario: async (scenarioId: string) => {
+    if (!isDemoMode) return;
     set({ isSimulating: true });
     await demoApiAdapter.applyScenario(scenarioId);
     liveEventsService.broadcastUpdate();
@@ -49,6 +55,7 @@ export const useOperatorStore = create<OperatorState>((set, get) => ({
   },
 
   triggerElevatorFailure: async (elevatorId = 'elev_a1') => {
+    if (!isDemoMode) return;
     set({ isSimulating: true });
     await demoApiAdapter.createEvent({
       entityId: elevatorId,
@@ -69,18 +76,19 @@ export const useOperatorStore = create<OperatorState>((set, get) => ({
   },
 
   createDisruption: async (disruptionData) => {
-    await demoApiAdapter.createEvent(disruptionData);
+    await getApiClient().createEvent(disruptionData);
     liveEventsService.broadcastUpdate();
     await get().loadNetworkData();
   },
 
   resolveDisruption: async (id: string) => {
-    await demoApiAdapter.resolveEvent(id);
+    await getApiClient().resolveEvent(id);
     liveEventsService.broadcastUpdate();
     await get().loadNetworkData();
   },
 
   resetDemo: async () => {
+    if (!isDemoMode) return;
     set({ isSimulating: true });
     await demoApiAdapter.resetDemo();
     liveEventsService.broadcastUpdate();

@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { useOperatorStore } from '../../stores/operatorStore';
 import { useJourneyStore } from '../../stores/journeyStore';
+import { isDemoMode } from '../../config/runtime';
 
 export const Navbar = () => {
   const location = useLocation();
@@ -25,6 +26,6 @@ export const Navbar = () => {
       <button ref={toggle} className="mobile-toggle" aria-label={open ? 'Close navigation' : 'Open navigation'} aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
     </div>
     <AnimatePresence>{open && <motion.nav id="mobile-navigation" aria-label="Mobile navigation" className="mobile-nav" initial={{ height: reduced ? 'auto' : 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: reduced ? 'auto' : 0, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>{links.map(link => <NavLink key={link.to} to={link.to}>{link.label}<ArrowUpRight size={16} /></NavLink>)}</motion.nav>}</AnimatePresence>
-    {!isHome && <div className="demo-toolbar"><div className="page-width"><span><span className="status-dot" />Demo network · {active ? 'Disruption reported' : 'All facilities operational'}</span><Button size="sm" variant="ghost" isLoading={isSimulating} onClick={async () => { if (active) { await resetDemo(); await searchJourneys(); } else { await triggerElevatorFailure(); } }}>{active && <RotateCcw size={13} />}{active ? 'Reset demo' : 'Simulate outage'}</Button></div></div>}
+    {isDemoMode && !isHome && <div className="demo-toolbar"><div className="page-width"><span><span className="status-dot" />Demo network · {active ? 'Disruption reported' : 'All facilities operational'}</span><Button size="sm" variant="ghost" isLoading={isSimulating} onClick={async () => { if (active) { await resetDemo(); await searchJourneys(); } else { await triggerElevatorFailure(); } }}>{active && <RotateCcw size={13} />}{active ? 'Reset demo' : 'Simulate outage'}</Button></div></div>}
   </header>;
 };

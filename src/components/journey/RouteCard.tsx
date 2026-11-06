@@ -33,6 +33,8 @@ export const RouteCard: React.FC<RouteCardProps> = ({
   onViewDetails
 }) => {
   const isAffected = route.affectedByDisruption;
+  const accessibilityStatus = route.accessibilityStatus
+    ?? (route.isStepFree ? 'verified' : 'inaccessible');
 
   return (
     <div
@@ -117,10 +119,15 @@ export const RouteCard: React.FC<RouteCardProps> = ({
           ))}
         </div>
 
-        {route.isStepFree ? (
+        {accessibilityStatus === 'verified' ? (
           <span className="flex items-center gap-1 font-semibold text-accessible text-[11px]">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Step-free verified
+            {route.accessibilityStatus ? 'Tag-supported step-free' : 'Step-free verified'}
+          </span>
+        ) : accessibilityStatus === 'uncertain' ? (
+          <span className="flex items-center gap-1 font-semibold text-warning text-[11px]">
+            <HelpCircle className="w-3.5 h-3.5" />
+            Step-free status unknown
           </span>
         ) : (
           <span className="flex items-center gap-1 font-semibold text-disruption text-[11px]">

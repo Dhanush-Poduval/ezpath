@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { DEMO_NODES } from '../../data/demoNetwork';
+import { ACTIVE_MAP_CONFIG, ACTIVE_NETWORK_NODES } from '../../data/networkLocations';
 import { JourneyRoute, FacilityStatus, NetworkNode } from '../../types';
 import { MapLegend } from './MapLegend';
 import { useOperatorStore } from '../../stores/operatorStore';
@@ -13,6 +13,8 @@ import {
   Compass,
 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
+import { MapLibreCanvas } from './MapLibreCanvas';
+import { locationMapAdapter } from '../../services/maps/locationAdapter';
 
 interface InteractiveMapProps {
   routes?: JourneyRoute[];
@@ -27,36 +29,30 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   className = "w-full h-full relative"
 }) => {
   const [selectedEntity, setSelectedEntity] = useState<NetworkNode | FacilityStatus | null>(null);
-  const [mapMode, setMapMode] = useState<'osm' | 'schematic'>('osm');
+  const [mapMode, setMapMode] = useState<'street' | 'schematic'>('street');
   const { disruptions } = useOperatorStore();
 
   const selectedRoute = useMemo(() => {
     return routes.find(r => r.id === selectedRouteId) || routes[0];
   }, [routes, selectedRouteId]);
-
-  // Center coordinate bbox for OpenStreetMap embed (Central Station to Riverside Campus corridor)
-  const osmEmbedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=77.2000%2C28.6180%2C77.2600%2C28.6550&layer=mapnik&marker=28.6328%2C77.2185`;
+  const mapProvider = locationMapAdapter.getMapConfig().provider;
+  const providerLabel = mapProvider === 'amazon-location' ? 'Amazon Location' : 'OpenStreetMap';
 
   return (
     <div 
       className={`relative w-full h-full min-h-[500px] overflow-hidden bg-slate-100 flex flex-col ${className}`}
       aria-label="Transit and Accessible Route Map"
     >
-      {/* 1. OpenStreetMap (OSM) Map View - Fullscreen Edge-to-Edge */}
-      {mapMode === 'osm' ? (
+      {/* 1. MapLibre street map - Amazon Location in configured production builds */}
+      {mapMode === 'street' ? (
         <div className="absolute inset-0 w-full h-full">
-          <iframe
-            title="OpenStreetMap Live Cartography"
-            src={osmEmbedUrl}
-            className="w-full h-full border-0 pointer-events-auto"
-            loading="eager"
-          />
+          <MapLibreCanvas selectedRoute={selectedRoute} onSelectEntity={setSelectedEntity} />
         </div>
       ) : (
         /* 2. Multimodal Transit Schematic Overlay */
         <div className="absolute inset-0 w-full h-full bg-[#F4F6F9] flex flex-col items-center justify-center p-4">
-          <svg viewBox="77.20 28.61 0.06 0.04" className="w-full h-full max-h-[700px]">
-            {DEMO_NODES.map(node => {
+          <svg viewBox={ACTIVE_MAP_CONFIG.schematicViewBox} className="w-full h-full max-h-[700px]">
+            {ACTIVE_NETWORK_NODES.map(node => {
               const isOrigin = selectedRoute?.legs[0]?.fromNodeId === node.id;
               const isDest = selectedRoute?.legs[selectedRoute.legs.length - 1]?.toNodeId === node.id;
               const fill = isOrigin ? '#2563EB' : isDest ? '#087F6D' : '#334155';
@@ -96,14 +92,14 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 hidden md:flex items-center gap-2 pointer-events-auto">
         <div className="bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-floating flex items-center gap-2 text-xs font-medium text-ink">
           <div className="w-5 h-5 rounded-md bg-emerald-700 text-white flex items-center justify-center font-bold text-[9px]">
-            OSM
+            {mapProvider === 'amazon-location' ? 'AWS' : 'OSM'}
           </div>
-          <span className="font-bold text-ink">OpenStreetMap</span>
+          <span className="font-bold text-ink">{providerLabel}</span>
           <span className="text-slate-300">|</span>
-          <span className="text-[11px] text-slate-500">Multimodal Corridor</span>
+          <span className="text-[11px] text-slate-500">{ACTIVE_MAP_CONFIG.subtitle}</span>
           <span className="text-slate-300">|</span>
           <a
-            href="https://www.openstreetmap.org/#map=14/28.6350/77.2300"
+            href={ACTIVE_MAP_CONFIG.fullMapUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-accent hover:text-accent-hover inline-flex items-center gap-0.5 text-[11px] font-semibold"
@@ -115,14 +111,14 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         {/* Map View Mode Switcher */}
         <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-xl border border-slate-200 shadow-floating text-xs">
           <button
-            onClick={() => setMapMode('osm')}
+            onClick={() => setMapMode('street')}
             className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-              mapMode === 'osm' 
+              mapMode === 'street'
                 ? 'bg-slate-900 text-white shadow-sm' 
                 : 'text-slate-600 hover:text-ink'
             }`}
           >
-            Street (OSM)
+            Street
           </button>
           <button
             onClick={() => setMapMode('schematic')}
@@ -200,13 +196,17 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
             {'isWheelchairAccessible' in selectedEntity && (
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                 <span className="text-slate-600">Wheelchair Accessible</span>
-                {selectedEntity.isWheelchairAccessible ? (
+                {selectedEntity.isWheelchairAccessible === true ? (
                   <span className="flex items-center gap-1 font-semibold text-accessible">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Yes
                   </span>
-                ) : (
+                ) : selectedEntity.isWheelchairAccessible === false ? (
                   <span className="flex items-center gap-1 font-semibold text-disruption">
                     <XCircle className="w-3.5 h-3.5" /> No (Stairs)
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 font-semibold text-warning">
+                    Accessibility not verified
                   </span>
                 )}
               </div>
