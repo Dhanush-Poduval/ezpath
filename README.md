@@ -1,8 +1,8 @@
-# AccessPath — Multimodal Accessible Journey Planning
+# EzPath — Multimodal Accessible Journey Planning
 
 > **"The shortest route isn't always the right route."**
 
-AccessPath is a multimodal, accessibility-first journey-planning platform that helps travellers find routes they can actually use — considering wheelchair accessibility, stairs, elevators, walking limits, cost, transport availability, reliability, and live disruptions.
+EzPath is a multimodal, accessibility-first journey-planning platform that helps travellers find routes they can actually use — considering wheelchair accessibility, stairs, elevators, walking limits, cost, transport availability, reliability, and live disruptions.
 
 ---
 
@@ -11,7 +11,7 @@ AccessPath is a multimodal, accessibility-first journey-planning platform that h
 The frontend features a fully deterministic, constraint-aware graph solver and multi-tab realtime synchronisation via `BroadcastChannel` and `localStorage`.
 
 ### Complete 20-Step Demo:
-1. **Open AccessPath** (`/`). Review the hero comparison demonstrating why naive shortest path routing fails wheelchair users.
+1. **Open EzPath** (`/`). Review the hero comparison demonstrating why naive shortest path routing fails wheelchair users.
 2. Click **"Plan your journey"** (`/plan`).
 3. Notice starting location is **Central Station** and destination is **Riverside Campus**.
 4. Select the **Wheelchair** mobility profile:
@@ -32,7 +32,7 @@ The frontend features a fully deterministic, constraint-aware graph solver and m
     > *"Your journey has been affected. Elevator A1 at Central Station is currently unavailable (Traction motor overheating)."*
 14. The affected route segment is marked in **red** on the MapLibre map and invalidated.
 15. Click **"Recalculate Accessible Route"**.
-16. AccessPath dynamically replans the route under the **exact same physical constraints** (never loosening step-free or walking distance). It routes via the West Wing street ramp (Ramp W1) and Accessible Low-Floor Bus 402.
+16. EzPath dynamically replans the route under the **exact same physical constraints** (never loosening step-free or walking distance). It routes via the West Wing street ramp (Ramp W1) and Accessible Low-Floor Bus 402.
 17. The **"What changed in your journey?"** comparison highlights:
     - Travel time: **+8 min** (26 min total)
     - Fare: **-₹10** (₹25 total, well within ₹50 limit)
@@ -56,10 +56,10 @@ The frontend features a fully deterministic, constraint-aware graph solver and m
 - **Asynchronous Data**: TanStack Query
 - **Charts & Analytics**: Recharts
 - **Offline Storage**: IndexedDB via `idb`
-- **Testing**: Vitest + React Testing Library (100% passing tests for routing, constraints, and dynamic replanning)
+- **Testing**: Vitest + React Testing Library for routing, constraints, adapters, and dynamic replanning
 - **Icons**: Lucide React
 - **PWA**: Web App Manifest + Service Worker support
-- **Accessibility**: WCAG 2.2 AA compliant (Skip-to-content, ARIA live regions, keyboard navigation, focus rings)
+- **Accessibility**: WCAG-oriented implementation with skip-to-content, ARIA live regions, keyboard navigation, and focus rings; external conformance audit pending
 
 ---
 
@@ -102,7 +102,7 @@ src/
 ├── services/
 │   ├── api/
 │   │   ├── client.ts              # Abstract ApiClient interface
-│   │   ├── awsClient.ts           # Production AWS backend adapter (Cognito + AppSync + Location)
+│   │   ├── awsClient.ts           # Production API Gateway backend adapter
 │   │   ├── demoAdapter.ts         # Deterministic graph routing & replanning engine
 │   │   └── index.ts               # Factory selecting Demo vs AWS adapter
 │   ├── auth/
@@ -155,7 +155,7 @@ npm run build
 
 ## ☁️ AWS Backend Connection (Production Mode)
 
-To connect the application to an active AWS Transit Backend:
+To connect the application to the deployed AWS routing backend:
 1. Copy `.env.example` to `.env`:
    ```bash
    cp .env.example .env
@@ -163,10 +163,11 @@ To connect the application to an active AWS Transit Backend:
 2. Update the environment variables:
    ```env
    VITE_DEMO_MODE=false
-   VITE_API_BASE_URL=https://api.accesspath.transit.aws.internal
+   VITE_API_BASE_URL=https://your-http-api-id.execute-api.ap-south-1.amazonaws.com
    VITE_AWS_REGION=ap-south-1
-   VITE_LOCATION_MAP_NAME=AccessPathDefaultMap
-   VITE_COGNITO_USER_POOL_ID=ap-south-1_accesspath
+   VITE_LOCATION_MAP_NAME=EzPathCampusMap
+   VITE_LOCATION_API_KEY=your_referer_restricted_browser_key
+   VITE_COGNITO_USER_POOL_ID=ap-south-1_replace_me
    VITE_COGNITO_CLIENT_ID=your_cognito_app_client_id
    VITE_APPSYNC_EVENTS_HTTP_URL=https://your-api-id.appsync-api.ap-south-1.amazonaws.com/event
    VITE_APPSYNC_EVENTS_REALTIME_URL=wss://your-api-id.appsync-realtime-api.ap-south-1.amazonaws.com/event/realtime
@@ -178,14 +179,20 @@ To connect the application to an active AWS Transit Backend:
    npm run build
    ```
 
+Production mode uses the source-backed SRM campus catalog and calls `POST /v1/routes`. The current backend is pedestrian-only: the production UI does not offer bus or metro routing until timetable-aware routing is implemented. Operator writes require a valid Cognito access token; demo scenario controls remain available only when `VITE_DEMO_MODE=true`.
+
+The CDK stack creates manual Amplify Hosting, API Gateway CORS for the generated Amplify URL, and an Amazon Location map key restricted to map rendering from localhost and that hosted URL. It does not connect Amplify to GitHub. Follow [infra/DEPLOYMENT.md](infra/DEPLOYMENT.md) after IAM access is configured; no deployment has been performed from this repository yet.
+
 ---
 
-## 🛡️ WCAG 2.2 AA Accessibility Compliance
+## 🛡️ Accessibility Implementation
 
 - **Semantic Landmarks**: Proper `<header>`, `<main>`, `<aside>`, `<nav>`, and `<footer>` elements.
 - **Skip Link**: Top-level visible keyboard skip link directly targeting `#main-content`.
 - **Keyboard Operable**: Full keyboard accessibility for route selection, toggles, and modals.
 - **ARIA Live Regions**: Disruption alerts announce changes dynamically without interrupting user focus.
 - **Color Independence**: Routes, stops, and hazards feature dedicated text labels, icons, and dash patterns.
-- **Screen Reader Independent Itinerary**: Turn-by-turn text instructions provide 100% of information without requiring visual map inspection.
+- **Text Itinerary**: Turn-by-turn instructions provide a non-map representation of the returned route.
+
+These implementation features have not yet undergone an external WCAG conformance audit.
 

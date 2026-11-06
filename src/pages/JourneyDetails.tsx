@@ -129,8 +129,10 @@ export const JourneyDetails: React.FC = () => {
           </div>
 
           <div className="journey-status">
-            {route.isStepFree ? (
-              <Badge variant="accessible">Step-free</Badge>
+            {(route.accessibilityStatus ?? (route.isStepFree ? 'verified' : 'inaccessible')) === 'verified' ? (
+              <Badge variant="accessible">{route.accessibilityStatus ? 'Tag-supported' : 'Step-free'}</Badge>
+            ) : route.accessibilityStatus === 'uncertain' ? (
+              <Badge variant="warning">Accessibility unverified</Badge>
             ) : (
               <Badge variant="disruption">Contains Stairs</Badge>
             )}
@@ -160,7 +162,7 @@ export const JourneyDetails: React.FC = () => {
               ₹{route.totalFareINR}
             </div>
             <div className="text-[10px] text-ink-muted">
-              Integrated tariff
+              {route.accessibilityStatus ? 'Walking route only' : 'Integrated tariff'}
             </div>
           </div>
 
@@ -172,7 +174,7 @@ export const JourneyDetails: React.FC = () => {
               {route.walkingDistanceMeters} m
             </div>
             <div className="text-[10px] text-ink-muted">
-              Max slope &lt; 1:14
+              {route.accessibilityStatus ? 'Mapped graph distance' : 'Max slope < 1:14'}
             </div>
           </div>
 
@@ -184,7 +186,7 @@ export const JourneyDetails: React.FC = () => {
               {route.transfersCount}
             </div>
             <div className="text-[10px] text-ink-muted">
-              Level platform changes
+              {route.accessibilityStatus ? 'Walking network' : 'Level platform changes'}
             </div>
           </div>
         </div>

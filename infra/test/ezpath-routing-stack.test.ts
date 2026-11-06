@@ -152,3 +152,48 @@ test("streams status changes through the publisher Lambda with retries and a DLQ
     },
   });
 });
+
+test("creates manual Amplify hosting with SPA routing", () => {
+  const rendered = template();
+  rendered.hasResourceProperties("AWS::Amplify::App", {
+    Name: "ezpath-web",
+    Platform: "WEB",
+    CustomRules: Match.arrayWith([
+      Match.objectLike({ Target: "/index.html", Status: "200" }),
+    ]),
+  });
+  rendered.hasResourceProperties("AWS::Amplify::Branch", {
+    BranchName: "main",
+    EnableAutoBuild: false,
+    EnablePullRequestPreview: false,
+    Framework: "React",
+    Stage: "PRODUCTION",
+  });
+  rendered.hasOutput("AmplifyAppId", {});
+  rendered.hasOutput("AmplifyUrl", {});
+});
+
+test("restricts the Amazon Location browser key to map rendering and known origins", () => {
+  const rendered = template();
+  rendered.hasResourceProperties("AWS::Location::Map", {
+    MapName: "EzPathCampusMap",
+    Configuration: { Style: "VectorOpenDataStandardLight" },
+  });
+  rendered.hasResourceProperties("AWS::Location::APIKey", {
+    KeyName: "EzPathCampusBrowserMapKey",
+    NoExpiry: true,
+    Restrictions: {
+      AllowActions: ["geo:GetMap*"],
+      AllowResources: Match.anyValue(),
+      AllowReferers: Match.arrayWith(["http://localhost:3000/*"]),
+    },
+  });
+  rendered.hasResourceProperties("AWS::ApiGatewayV2::Api", {
+    CorsConfiguration: Match.objectLike({
+      AllowOrigins: Match.arrayWith(["http://localhost:3000"]),
+    }),
+  });
+  rendered.hasOutput("LocationMapName", { Value: "EzPathCampusMap" });
+  rendered.hasOutput("LocationApiKeyName", { Value: "EzPathCampusBrowserMapKey" });
+  assert.match(JSON.stringify(rendered.toJSON()), /DefaultDomain/);
+});

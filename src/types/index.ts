@@ -66,9 +66,9 @@ export interface RouteLeg {
   wheelchairAccessible: boolean;
   elevatorId?: string;
   elevatorOperational?: boolean;
-  evidenceSource: 'operator_iot' | 'station_audit' | 'municipal_survey' | 'crowdsourced' | 'unknown';
+  evidenceSource: 'operator_iot' | 'station_audit' | 'municipal_survey' | 'crowdsourced' | 'openstreetmap' | 'unknown';
   evidenceTimestamp: string;
-  confidenceScore: number; // 0.0 to 1.0
+  confidenceScore: number | null; // null when confidence has not been measured
   geometry: [number, number][]; // [longitude, latitude]
   steps: RouteStep[];
 }
@@ -106,9 +106,10 @@ export interface JourneyRoute {
   legs: RouteLeg[];
   isStepFree: boolean;
   isWheelchairAccessible: boolean;
+  accessibilityStatus?: 'verified' | 'uncertain' | 'inaccessible';
   isFeasible: boolean;
   feasibilityReason?: string;
-  reliabilityScore: number; // 0 to 100
+  reliabilityScore: number | null; // null when verification coverage is not measured
   evidenceConfidence: 'high' | 'medium' | 'low';
   explanation: RouteExplanation;
   geometry: [number, number][]; // Full route line
@@ -167,7 +168,8 @@ export interface NetworkNode {
   name: string;
   type: 'station' | 'bus_stop' | 'entrance' | 'platform' | 'intersection' | 'destination';
   coordinates: [number, number]; // [lng, lat]
-  isWheelchairAccessible: boolean;
+  accessibilityStatus?: 'verified' | 'unknown' | 'inaccessible';
+  isWheelchairAccessible: boolean | null;
   hasElevator: boolean;
   hasRamps: boolean;
   hasTactilePaving: boolean;
@@ -187,7 +189,7 @@ export interface NetworkEdge {
   wheelchairAccessible: boolean;
   elevatorId?: string;
   hasStairs: boolean;
-  evidenceSource: 'operator_iot' | 'station_audit' | 'municipal_survey' | 'crowdsourced' | 'unknown';
+  evidenceSource: 'operator_iot' | 'station_audit' | 'municipal_survey' | 'crowdsourced' | 'openstreetmap' | 'unknown';
   lastUpdated: string;
   geometry: [number, number][];
   isOperational: boolean;

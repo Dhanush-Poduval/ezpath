@@ -6,7 +6,12 @@ import {
   DisruptionEvent 
 } from '../types';
 import { getApiClient } from '../services/api';
-import { DEMO_NODES } from '../data/demoNetwork';
+import {
+  DEFAULT_DESTINATION_ID,
+  DEFAULT_ORIGIN_ID,
+  getJourneyLocationName,
+} from '../data/networkLocations';
+import { isDemoMode } from '../config/runtime';
 
 export const DEFAULT_PROFILES: Record<string, TravellerProfile> = {
   standard: {
@@ -111,9 +116,9 @@ interface JourneyState {
 }
 
 export const useJourneyStore = create<JourneyState>((set, get) => ({
-  originId: 'node_central_station',
-  destinationId: 'node_riverside_campus',
-  profile: DEFAULT_PROFILES.wheelchair,
+  originId: DEFAULT_ORIGIN_ID,
+  destinationId: DEFAULT_DESTINATION_ID,
+  profile: isDemoMode ? DEFAULT_PROFILES.wheelchair : DEFAULT_PROFILES.standard,
   departureTime: new Date().toISOString(),
   routes: [],
   selectedRouteId: null,
@@ -165,9 +170,12 @@ export const useJourneyStore = create<JourneyState>((set, get) => ({
       });
 
       const selectedId = result.routes.length > 0 ? result.routes[0].id : null;
-      set({ 
+      set({
         routes: result.routes, 
         selectedRouteId: selectedId,
+        error: result.routes.length === 0
+          ? result.message || 'No route satisfies the selected accessibility constraints.'
+          : null,
         isLoading: false 
       });
     } catch (err: any) {
@@ -241,7 +249,6 @@ export const useJourneyStore = create<JourneyState>((set, get) => ({
 }));
 
 export function getStationName(id: string): string {
-  const node = DEMO_NODES.find(n => n.id === id);
-  return node ? node.name : id;
+  return getJourneyLocationName(id);
 }
 

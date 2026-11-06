@@ -1,6 +1,7 @@
 import React from 'react';
 import { useJourneyStore } from '../../stores/journeyStore';
-import { DEMO_NODES } from '../../data/demoNetwork';
+import { ACTIVE_LOCATIONS } from '../../data/networkLocations';
+import { isDemoMode } from '../../config/runtime';
 import { ProfileBuilder } from '../accessibility/ProfileBuilder';
 import { Button } from '../ui/Button';
 import { 
@@ -64,9 +65,9 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ onSearch }) => {
             onChange={(e) => setOriginId(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 bg-white border border-subtle-border rounded-lg text-xs font-medium text-ink focus:border-accent focus:ring-1 focus:ring-accent"
           >
-            {DEMO_NODES.map(node => (
-              <option key={node.id} value={node.id}>
-                {node.name}
+            {ACTIVE_LOCATIONS.map(location => (
+              <option key={location.id} value={location.id}>
+                {location.name}
               </option>
             ))}
           </select>
@@ -96,9 +97,9 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ onSearch }) => {
             onChange={(e) => setDestinationId(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 bg-white border border-subtle-border rounded-lg text-xs font-medium text-ink focus:border-accessible focus:ring-1 focus:ring-accessible"
           >
-            {DEMO_NODES.map(node => (
-              <option key={node.id} value={node.id}>
-                {node.name}
+            {ACTIVE_LOCATIONS.map(location => (
+              <option key={location.id} value={location.id}>
+                {location.name}
               </option>
             ))}
           </select>
@@ -106,7 +107,7 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ onSearch }) => {
       </div>
 
       {/* Allowed transit modes */}
-      <div>
+      {isDemoMode ? <div>
         <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
           Permitted Modes
         </label>
@@ -143,7 +144,11 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ onSearch }) => {
             <span>Metro</span>
           </button>
         </div>
-      </div>
+      </div> : (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-slate-700">
+          Production routing currently covers the SRM pedestrian network. Transit modes will appear only after timetable-aware routing is implemented.
+        </div>
+      )}
 
       {/* Profile Builder Section */}
       <div className="pt-2 border-t border-subtle-border">

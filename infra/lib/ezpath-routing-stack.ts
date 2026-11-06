@@ -8,12 +8,14 @@ import {
   Stack,
   StackProps,
   aws_apigatewayv2 as apigatewayv2,
+  aws_amplify as amplify,
   aws_appsync as appsync,
   aws_cloudwatch as cloudwatch,
   aws_cognito as cognito,
   aws_dynamodb as dynamodb,
   aws_lambda as lambda,
   aws_logs as logs,
+  aws_location as location,
   aws_s3 as s3,
   aws_sqs as sqs,
 } from "aws-cdk-lib";
@@ -66,6 +68,46 @@ export class EzPathRoutingStack extends Stack {
       authFlows: { userSrp: true },
       generateSecret: false,
       preventUserExistenceErrors: true,
+    });
+
+    const hostingApp = new amplify.CfnApp(this, "HostingApp", {
+      name: "ezpath-web",
+      platform: "WEB",
+      description: "Manual static hosting for the EzPath web application",
+      customRules: [
+        {
+          source:
+            "</^[^.]+$|\\.(?!(css|gif|ico|jpg|jpeg|js|json|map|png|svg|txt|webmanifest|woff|woff2)$)([^.]+$)/>",
+          target: "/index.html",
+          status: "200",
+        },
+      ],
+    });
+    const hostingBranch = new amplify.CfnBranch(this, "HostingBranch", {
+      appId: hostingApp.attrAppId,
+      branchName: "main",
+      description: "Production branch deployed from a local build artifact",
+      enableAutoBuild: false,
+      enablePullRequestPreview: false,
+      framework: "React",
+      stage: "PRODUCTION",
+    });
+    const hostingUrl = `https://${hostingBranch.attrBranchName}.${hostingApp.attrDefaultDomain}`;
+
+    const campusMap = new location.CfnMap(this, "CampusMap", {
+      mapName: "EzPathCampusMap",
+      description: "Basemap for the SRM Kattankulathur journey planner",
+      configuration: { style: "VectorOpenDataStandardLight" },
+    });
+    const campusMapKey = new location.CfnAPIKey(this, "CampusMapKey", {
+      keyName: "EzPathCampusBrowserMapKey",
+      description: "Referer-restricted browser key for rendering the EzPath campus map",
+      noExpiry: true,
+      restrictions: {
+        allowActions: ["geo:GetMap*"],
+        allowResources: [campusMap.attrArn],
+        allowReferers: ["http://localhost:3000/*", `${hostingUrl}/*`],
+      },
     });
 
     const eventsApi = new appsync.EventApi(this, "EventsApi", {
@@ -190,7 +232,7 @@ export class EzPathRoutingStack extends Stack {
           apigatewayv2.CorsHttpMethod.POST,
           apigatewayv2.CorsHttpMethod.OPTIONS,
         ],
-        allowOrigins: ["http://localhost:3000"],
+        allowOrigins: ["http://localhost:3000", hostingUrl],
         maxAge: Duration.hours(1),
       },
     });
@@ -259,6 +301,12 @@ export class EzPathRoutingStack extends Stack {
     );
 
     new CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
+    new CfnOutput(this, "AwsRegion", { value: this.region });
+    new CfnOutput(this, "AmplifyAppId", { value: hostingApp.attrAppId });
+    new CfnOutput(this, "AmplifyBranchName", { value: hostingBranch.attrBranchName });
+    new CfnOutput(this, "AmplifyUrl", { value: hostingUrl });
+    new CfnOutput(this, "LocationMapName", { value: campusMap.mapName });
+    new CfnOutput(this, "LocationApiKeyName", { value: campusMapKey.keyName });
     new CfnOutput(this, "GraphBucketName", { value: graphBucket.bucketName });
     new CfnOutput(this, "GraphObjectKey", { value: "graphs/campus.graphml" });
     new CfnOutput(this, "StatusTableName", { value: statusTable.tableName });

@@ -4,6 +4,7 @@ import {
   DisruptionNotification,
   appSyncEventsClientFromEnvironment,
 } from './appSyncEventsClient';
+import { isDemoMode } from '../../config/runtime';
 
 export type DisruptionListener = (events: DisruptionEvent[]) => void;
 
@@ -49,7 +50,7 @@ export class LiveEventsService {
   private readonly pollIntervalMs: number;
 
   constructor(options: LiveEventsOptions = {}) {
-    this.demoMode = options.demoMode ?? import.meta.env.VITE_DEMO_MODE !== 'false';
+    this.demoMode = options.demoMode ?? isDemoMode;
     this.apiClient = this.demoMode ? null : (options.apiClient ?? getApiClient());
     this.eventsClient = this.demoMode
       ? null
