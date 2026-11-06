@@ -5,6 +5,7 @@ import { ScrollProgress } from './ScrollProgress';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { SkipLink } from '../ui/SkipLink';
+import { PwaInstallBanner } from '../ui/PwaInstallBanner';
 import { liveEventsService } from '../../services/realtime/liveEvents';
 import { useJourneyStore } from '../../stores/journeyStore';
 import { useOperatorStore } from '../../stores/operatorStore';
@@ -44,7 +45,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         {children}
       </main>
       <Footer />
+      {/* Floating PWA Install Banner */}
+      <PwaInstallBanner />
     </div>
   );
 };
-
